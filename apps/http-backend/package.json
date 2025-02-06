@@ -12,14 +12,18 @@
     "@repo/backend-common": "workspace:*",
     "@repo/common": "workspace:*",
     "@repo/typescript-config": "workspace:*",
-    "@types/bcrypt": "^5.0.2",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.17",
     "esbuild": "^0.24.2"
   },
   "dependencies": {
     "@repo/db": "workspace:*",
     "@types/express": "^5.0.0",
-    "bcrypt": "^5.1.1",
-    "express": "^4.21.2"
+    "@types/jsonwebtoken": "^9.0.8",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2"
   },
   "keywords": [],
   "author": "",
