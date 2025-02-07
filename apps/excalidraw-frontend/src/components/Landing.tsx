@@ -6,6 +6,7 @@ import { Button } from "@repo/ui/button";
 import { Card } from "@repo/ui/card";
 
 export default function LandingPage() {
+  
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Hero Section */}
@@ -25,6 +26,7 @@ export default function LandingPage() {
               <Link href="/start">
                 <Button
                   text="Start Drawing"
+                  
   className="border border-white"
                 />
               </Link>

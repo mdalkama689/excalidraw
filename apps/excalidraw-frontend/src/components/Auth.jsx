@@ -4,12 +4,13 @@ import { Input } from "@repo/ui/input";
 import Link from "next/link";
 import { useState } from "react";
 import axios from "axios";
-import {Toast} from "@repo/ui/toast"
-export function AuthPage({ type }) {
+import { HTTP_BACKEND } from "../../config";
+import { useRouter } from "next/navigation";
 
+export function AuthPage({ type }) {
+  const router = useRouter();
 
   const [isLoading, setIsLaoding] = useState(false);
-  const [errorMessage,setErrorMessage] = useState('')
 
   const [formData, setFormData] = useState({
     username: "",
@@ -18,21 +19,21 @@ export function AuthPage({ type }) {
 
   const handleSubmit = async (e) => {
     try {
-      const reqType = type=== "signup" ? "signup" : "signin"
+      const reqType = type === "signup" ? "signup" : "signin";
       e.preventDefault();
       setIsLaoding(true);
-      const response = await axios.post(
-        `http://localhost:8000/${reqType}`,
-        formData
-      );
+      const response = await axios.post(`${HTTP_BACKEND}/${reqType}`, formData);
       console.log(response);
+      if (response.data.success) {
+        router.push(type === "signup" ? "/signin" : "/");
+      }
+      if (type === "signin") {
+        localStorage.setItem("token", response.data.token);
+      }
     } catch (error) {
-      console.log(error?.response?.data?.message)
-      const message = error?.response?.data?.message ||"Something went wromg!"
-setErrorMessage(message)
-setTimeout(() => {
-  setErrorMessage('')
-}, 4000);
+      console.log(error?.response?.data?.message);
+      const message = error?.response?.data?.message || "Something went wromg!";
+      alert(message);
     } finally {
       setIsLaoding(false);
     }
@@ -40,18 +41,15 @@ setTimeout(() => {
 
   const handleInput = (e) => {
     const { name, value } = e.target;
-    console.log(name, value);
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
   };
 
- 
-
-  return ( 
-    <div className="h-screen w-full flex items-center justify-center">
-      {!isLoading && <Toast type="success" text="Please wait, account is being created!" />}
+  return (
+    <div className="h-screen w-full flex items-center justify-center flex-col">
       <div className=" w-[400px] bg-white rounded-lg shadow border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
         <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
           <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
