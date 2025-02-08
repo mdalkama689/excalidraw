@@ -168,7 +168,7 @@ app.get(
   async (req: Request, res: Response) => {
     try {
       const roomId = req.params.roomId;
-      console.log("roomdi : ", roomId)
+      
       if (!roomId) {
         res.status(400).json({
           success: false,
@@ -180,8 +180,12 @@ app.get(
         where: {
           roomId: Number(roomId),
         },
+        select: {
+          text: true
+        }
       });
 
+      console.log(allChats)
       res.status(200).json({
         success: true,
         allChats,
@@ -195,6 +199,52 @@ app.get(
     }
   }
 );
+
+
+app.post('/check-room', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    
+    const roomId = req.body.roomId
+
+    console.log(req.body)
+    if(!roomId){
+      res.status(400).json({
+        success: false,
+        message: "Please enter room id!",
+      })
+      return
+    }
+
+
+    const room = await client.room.findFirst({
+      where: {
+        id: Number(roomId)
+      }
+    })
+
+    if(!room){
+      res.status(400).json({
+        success: false,
+        message: "Room does not exists!",
+      })
+      return
+    }
+
+
+    res.status(200).json({
+      success: true,
+      message: "Room is available!",
+      room
+    })
+    return 
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error instanceof Error ? error.message : "Something went wrong",
+    })
+    return
+  }
+})
 
 app.listen(8000, () => {
   console.log("running");
