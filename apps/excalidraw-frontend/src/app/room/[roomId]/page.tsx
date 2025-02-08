@@ -5,10 +5,7 @@ import { useParams } from "next/navigation";
 import axios, { all } from "axios";
 import { HTTP_BACKEND } from "../../../../config";
 
-
-export default  function Room() {
-
-
+export default function Room() {
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const { roomId } = useParams();
   const [allChats, setAllChats] = useState([]);
@@ -29,34 +26,32 @@ export default  function Room() {
       wss.send(JSON.stringify(data));
     };
 
-    getAllChat()
+    getAllChat();
   }, []);
 
   useEffect(() => {
-   
     socket?.addEventListener("message", (data) => {
-      console.log(data)
- setAllChats(prev => [...prev, {text: data.data}])
-    })
+      console.log(data);
+      setAllChats((prev) => [...prev, { text: data.data }]);
+    });
   }, [socket]);
 
   const getAllChat = async () => {
-  try {
-    
+    try {
       const response = await axios.get(`${HTTP_BACKEND}/chats/${roomId}`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        }
-      })    
-      
-      setAllChats(response.data.allChats) 
-  } catch (error) {
-    console.log(error)
-  }
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
 
-  }
+      setAllChats(response.data.allChats);
+    } catch (error) {
+      console.log(error);
+      alert("Something went wrong!");
+    }
+  };
 
-  console.log('all set chat  : ', allChats)
+  console.log("all set chat  : ", allChats);
   if (!socket) {
     return <div>connecting to the server....</div>;
   }
@@ -69,8 +64,8 @@ export default  function Room() {
         message,
       };
       socket.send(JSON.stringify(data));
- 
-      setAllChats(prev => [...prev, {text: message}])
+
+      setAllChats((prev) => [...prev, { text: message }]);
     } catch (error) {
       console.log(error);
     }
@@ -78,10 +73,10 @@ export default  function Room() {
 
   console.log(allChats);
 
-  (allChats).map((mess, index) => {
+  allChats.map((mess, index) => {
     // console.log(JSON.stringify(mess))
-    console.log(index)
-  })
+    console.log(index);
+  });
   return (
     <div className="h-screen w-full flex items-center justify-center flex-col">
       <input
@@ -92,11 +87,11 @@ export default  function Room() {
       />
       <button onClick={handleSendMessage}> Send </button>
 
-<div>
-  {allChats.map((mess, index) => (
-    <p key={index}>{JSON.stringify(mess.text)}</p>
-  ))}
-</div>
+      <div>
+        {allChats.map((mess, index) => (
+          <p key={index}>{JSON.stringify(mess.text)}</p>
+        ))}
+      </div>
     </div>
   );
 }
