@@ -1,12 +1,12 @@
 import React from "react";
 
+
 let shapes = [];
 
-export function initDraw(
-  canvasRef: React.RefObject<HTMLCanvasElement | null>,
-  socket: WebSocket | null,
-  roomId: string
-) {
+export function initDraw( canvasRef: React.RefObject<HTMLCanvasElement | null>,
+    socket: WebSocket | null,
+    roomId: string ){
+
   if (!canvasRef.current) return;
   const canvas = canvasRef.current;
   const ctx = canvas.getContext("2d");
@@ -34,13 +34,12 @@ export function initDraw(
       height,
     };
 
-   
     const message = {
       type: "chat",
       message: JSON.stringify(diagram),
       roomId: roomId,
     };
-if(!socket) return
+    if (!socket) return;
 
     socket.send(JSON.stringify(message));
   };
@@ -60,10 +59,10 @@ if(!socket) return
   canvas.addEventListener("mousemove", handleMouseMove);
 
   socket?.addEventListener("message", (mess) => {
-const data = JSON.parse(mess.data) 
-console.log(data.x, data.y, data.width, data.height)
-ctx.clearRect(0, 0, canvas.width, canvas.height);
-ctx.strokeStyle = "white";
-ctx.strokeRect(data.x, data.y, data.width, data.height);
+    const data = JSON.parse(mess.data);
+    console.log(data.x, data.y, data.width, data.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = "white";
+    ctx.strokeRect(data.x, data.y, data.width, data.height);
   });
 }

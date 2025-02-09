@@ -6,7 +6,6 @@ import { Button } from "@repo/ui/button";
 import { Card } from "@repo/ui/card";
 
 export default function LandingPage() {
-  
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Hero Section */}
@@ -24,17 +23,10 @@ export default function LandingPage() {
             </p>
             <div className="mt-10 flex gap-4 justify-center">
               <Link href="/start">
-                <Button
-                  text="Start Drawing"
-                  
-  className="border border-white"
-                />
+                <Button text="Start Drawing" className="border border-white" />
               </Link>
               <Link href="/signup">
-                <Button
-                  text="Sign Up Free"
-                
-                />
+                <Button text="Sign Up Free" />
               </Link>
             </div>
           </div>
@@ -109,16 +101,10 @@ export default function LandingPage() {
           </p>
           <div className="flex gap-4 justify-center">
             <Link href="/signup">
-              <Button
-                text="Get Started Free"
-                  className="border border-white"
-              />
+              <Button text="Get Started Free" className="border border-white" />
             </Link>
             <Link href="/signin">
-              <Button
-                text="Sign In "
-               
-              />
+              <Button text="Sign In " />
             </Link>
           </div>
         </div>

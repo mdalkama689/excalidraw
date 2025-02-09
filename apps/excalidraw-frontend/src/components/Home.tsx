@@ -3,10 +3,9 @@
 import { Button } from "@repo/ui/button";
 import { Input } from "@repo/ui/input";
 import axios from "axios";
-import { useState } from "react";
+import React, { useState } from "react";
 import { HTTP_BACKEND } from "../../config";
 import { useRouter } from "next/navigation";
-
 
 export default function HomePage() {
   const router = useRouter();
@@ -16,7 +15,7 @@ export default function HomePage() {
   const [roomName, setRoomName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleCreateRoom = async (e) => {
+  const handleCreateRoom = async (e: React.FormEvent<HTMLFormElement>) => {
     try {
       e.preventDefault();
       setIsLoading(true);
@@ -43,7 +42,8 @@ export default function HomePage() {
     }
   };
 
-  const handleJoinRoom = async (e) => {
+  const handleJoinRoom = async (e: React.FormEvent<HTMLFormElement>) => {
+
     try {
       e.preventDefault();
       setIsLoading(true);
@@ -99,7 +99,7 @@ export default function HomePage() {
                   placeholder={roomValue}
                   name={roomValue}
                   id={roomValue}
-                  onChange={(e) =>
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                     toggle
                       ? setRoomId(e.target.value)
                       : setRoomName(e.target.value)
