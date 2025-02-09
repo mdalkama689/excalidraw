@@ -4,7 +4,7 @@ import { JWT_SECRET } from "@repo/backend-common/config";
 import { client } from "@repo/db/client";
 const wss = new WebSocketServer({ port: 8080 });
 
-let  user = [];
+let user = [];
 
 async function verifyToken(token) {
   try {
@@ -35,40 +35,39 @@ wss.on("connection", async (ws, req) => {
     return;
   }
 
-  ws.on("message", async  (data) => {
+  ws.on("message", async (data) => {
     const parsedData = JSON.parse(data.toString());
-
+    console.log(parsedData);
     if (parsedData.type === "join_room") {
-    user.push({
+      user.push({
         socket: ws,
         roomId: parsedData.roomId,
-        userId
-    })
+        userId,
+      });
     }
 
-    if(parsedData.type === "chat"){
-        user.forEach(eachUser => {
-            if(eachUser.roomId == parsedData.roomId && eachUser.socket != ws){
-            eachUser.socket.send(parsedData.message)
-            }
-        });
-    const chat =     await client.chat.create({
-            data: {
-                text: parsedData.message,
-                userId, 
-                roomId: Number(parsedData.roomId)
-            }
-        })
-
-        console.log("chat : ", chat)
-    }
-   
-    if(parsedData.type === 'leave_room'){
-        user = user.filter((eachUser) => eachUser.socket !== ws)
-
-    }
+    if (parsedData.type === "chat") {
+      const chat = await client.chat.create({
+        data: {
+          text: parsedData.message,
+          userId,
+          roomId: Number(parsedData.roomId),
+        },
+      });
+      user.forEach((eachUser) => {
+        if (eachUser.roomId == parsedData.roomId && eachUser.socket != ws) {
+          eachUser.socket.send(parsedData.message);
+        }
+      });
     
 
-    console.log(user.length)
+      console.log("chat : ", chat);
+    }
+
+    if (parsedData.type === "leave_room") {
+      user = user.filter((eachUser) => eachUser.socket !== ws);
+    }
+
+    console.log(user.length);
   });
 });

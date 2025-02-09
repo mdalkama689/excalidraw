@@ -1,83 +1,45 @@
-"use client";
+'use client'
 
 import { useEffect, useState } from "react";
-import axios from "axios";
-import { HTTP_BACKEND } from "../../config";
-import CanVas from "./Canvas";
-
+import Canvas from "./Canvas"; 
 
 export default function RoomCanVas({roomId}: {roomId: string}) {
 
-  const [socket, setSocket] = useState<WebSocket | null>(null);
-  const [allChats, setAllChats] = useState([]);
-const [message, setMessage] = useState("")
- 
+const [socket, setSocket] = useState<WebSocket | null> (null)
+useEffect(() => {
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
+  const token = localStorage.getItem("token");
+  if (!token) {
+    console.log("token not found");
+    return;
+  }
 
-    const wss = new WebSocket(`ws://localhost:8080?token=${token}`);
-
-    const data = {
+  const ws = new WebSocket(`ws:localhost:8080/?token=${token}`);
+  ws.onopen = () => {
+    const joinMessage = {
       type: "join_room",
       roomId,
     };
-    wss.onopen = () => {
-      setSocket(wss);
-      wss.send(JSON.stringify(data));
-    };
-
-    getAllChat();
-  }, []);
-
-  useEffect(() => {
-    socket?.addEventListener("message", (data) => {
-      console.log(data);
-      setAllChats((prev) => [...prev, { text: data.data }]);
-    });
-  }, [socket]);
-
-  const getAllChat = async () => {
-    try {
-      const response = await axios.get(`${HTTP_BACKEND}/chats/${roomId}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-
-      setAllChats(response.data.allChats);
-    } catch (error) {
-      console.log(error);
-      alert("Something went wrong!");
-    }
+    setSocket(ws);
+    ws.send(JSON.stringify(joinMessage));
   };
 
-  if (!socket) {
-    return <div>connecting to the server....</div>;
+  return () => {
+    socket?.close();
+  };
+
+},[])
+  if(!socket){
+    return (
+      <div>connecting to server........ </div>
+    )
   }
-
-  const handleSendMessage = async (e) => {
-    try {
-      const data = {
-        type: "chat",
-        roomId,
-        message,
-      };
-      socket.send(JSON.stringify(data));
-
-      setAllChats((prev) => [...prev, { text: message }]);
-    } catch (error) {
-      console.log(error);
-    }
-  };
 
   
   return (
-<>
- {/* {allChats.map((mess, index) => (
-    <p key={index}>{JSON.stringify(mess.text)}</p>
-  ))} */}
-  <CanVas/>
-</>
+  <Canvas 
+  roomId={roomId}
+  socket={socket}
+  />
   );
 }
