@@ -47,6 +47,13 @@ wss.on("connection", async (ws, req) => {
     }
 
     if (parsedData.type === "chat") {
+     
+      user.forEach((eachUser) => {
+        if (eachUser.roomId == parsedData.roomId && eachUser.socket != ws) {
+          eachUser.socket.send(parsedData.message);
+        }
+      });
+    
       const chat = await client.chat.create({
         data: {
           text: parsedData.message,
@@ -54,13 +61,6 @@ wss.on("connection", async (ws, req) => {
           roomId: Number(parsedData.roomId),
         },
       });
-      user.forEach((eachUser) => {
-        if (eachUser.roomId == parsedData.roomId && eachUser.socket != ws) {
-          eachUser.socket.send(parsedData.message);
-        }
-      });
-    
-
       console.log("chat : ", chat);
     }
 
