@@ -16,7 +16,7 @@ if(token){
   }, [])
 
   const token = localStorage.getItem('token')
-  console.log(token)
+
   return (
     <>
    {isAuthenticated? <HomePage/> : <LandingPage />}

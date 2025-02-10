@@ -53,15 +53,16 @@ wss.on("connection", async (ws, req) => {
           eachUser.socket.send(parsedData.message);
         }
       });
+      console.log(parsedData)
     
-      const chat = await client.chat.create({
-        data: {
-          text: parsedData.message,
-          userId,
-          roomId: Number(parsedData.roomId),
-        },
-      });
-      console.log("chat : ", chat);
+      // const chat = await client.chat.create({
+      //   data: {
+      //     text: parsedData.message,
+      //     userId,
+      //     roomId: Number(parsedData.roomId),
+      //   },
+      // });
+      // console.log("chat : ", chat);
     }
 
     if (parsedData.type === "leave_room") {

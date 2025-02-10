@@ -2,8 +2,6 @@ import axios from "axios";
 import React from "react";
 import { HTTP_BACKEND } from "../../config";
 
-let shapes = [];
-
 const getAllDiagram = async (roomId: string) => {
   try {
     const response = await axios.get(`${HTTP_BACKEND}/chats/${roomId}`, {
@@ -18,57 +16,31 @@ const getAllDiagram = async (roomId: string) => {
   }
 };
 
-export async function initDraw(
-  canvasRef: React.RefObject<HTMLCanvasElement | null>,
-  socket: WebSocket | null,
-  roomId: string
+export function initDraw(canvasRef: React.RefObject<HTMLCanvasElement | null>,
+socket: WebSocket | null
 ) {
-  const allDiagram = await getAllDiagram(roomId);
-  shapes = [...allDiagram];
-
-  
   if (!canvasRef.current) return;
   const canvas = canvasRef.current;
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
 
-  printAllExistingDiagram(ctx, canvas);
+  let startDraw = false;
   let startX = 0;
   let startY = 0;
-  let draw = false;
 
   const handleMouseDown = (e: MouseEvent) => {
-    draw = true;
+    console.log("mouse down");
+    startDraw = true;
     startX = e.offsetX;
     startY = e.offsetY;
-    console.log("mouse down ");
   };
-
   const handleMouseUp = (e: MouseEvent) => {
-    draw = false;
-    const width = e.offsetX - startX;
-    const height = e.offsetY - startY;
-
-    const diagram = {
-      x: startX,
-      y: startY,
-      width,
-      height,
-    };
-
-    const message = {
-      type: "chat",
-      message: JSON.stringify(diagram),
-      roomId: roomId,
-    };
-    console.log("mouse up"); 
-    if (!socket) return;
-
-    socket.send(JSON.stringify(message));
+    console.log("mouseup");
+    startDraw = false;
   };
-
   const handleMouseMove = (e: MouseEvent) => {
-    if (!draw) return;
+    if (!startDraw) return;
+
     const width = e.offsetX - startX;
     const height = e.offsetY - startY;
 
@@ -79,36 +51,16 @@ export async function initDraw(
 
 
 
-
   canvas.addEventListener("mousedown", handleMouseDown);
   canvas.addEventListener("mouseup", handleMouseUp);
   canvas.addEventListener("mousemove", handleMouseMove);
 
- 
-  if (!socket) return;
 
-  socket.addEventListener("message", (mess) => {
-    const data = JSON.parse(mess.data);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = "white";
-    ctx.strokeRect(data.x, data.y, data.width, data.height);
-  });
+  return () => {
+    canvas.removeEventListener("mousedown", handleMouseDown);
+    canvas.removeEventListener("mouseup", handleMouseUp);
+    canvas.removeEventListener("mousemove", handleMouseMove);
+    
 
- 
-
-}
-
-function printAllExistingDiagram(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
-  shapes.map((shape) => {
-    const parsedData = JSON.parse(shape.text);
-   
-    // ctx.clearRect(0,0, canvas.width, canvas.height)
-    ctx.strokeStyle = "white";
-    ctx.strokeRect(
-      parsedData.x,
-      parsedData.y,
-      parsedData.width,
-      parsedData.height
-    );
-  });
+  };
 }

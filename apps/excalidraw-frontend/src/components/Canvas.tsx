@@ -1,5 +1,3 @@
-"use client";
-
 import { initDraw } from "@/draw";
 import { useEffect, useRef } from "react";
 
@@ -10,11 +8,22 @@ export default function Canvas({
   socket: WebSocket | null;
   roomId: string;
 }) {
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    initDraw(canvasRef, socket, roomId);
-  }, [canvasRef]);
+    let cleanUp;
+
+    const setup = async() => {
+cleanUp = await initDraw(canvasRef, socket)
+    }
+
+    setup()
+    return () => {
+      if(cleanUp) cleanUp()
+    }
+  }, [canvasRef])
+  
 
   return (
     <canvas
