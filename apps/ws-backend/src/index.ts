@@ -35,9 +35,10 @@ wss.on("connection", async (ws, req) => {
     return;
   }
 
-  ws.on("message", async (data) => {
+  ws.on("message", async (data) => { 
     const parsedData = JSON.parse(data.toString());
-    console.log(parsedData);
+    console.log(" parsedData : ", parsedData);
+
     if (parsedData.type === "join_room") {
       user.push({
         socket: ws,
@@ -46,14 +47,15 @@ wss.on("connection", async (ws, req) => {
       });
     }
 
+console.log(" parsedData.message : ", parsedData.message)
     if (parsedData.type === "chat") {
-     
+
       user.forEach((eachUser) => {
         if (eachUser.roomId == parsedData.roomId && eachUser.socket != ws) {
-          eachUser.socket.send(parsedData.message);
+          eachUser.socket.send(JSON.stringify(parsedData.message))
         }
       });
-      console.log(parsedData)
+  
     
       // const chat = await client.chat.create({
       //   data: {

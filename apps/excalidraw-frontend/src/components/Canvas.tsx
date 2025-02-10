@@ -15,7 +15,7 @@ export default function Canvas({
     let cleanUp;
 
     const setup = async() => {
-cleanUp = await initDraw(canvasRef, socket)
+cleanUp = await initDraw(canvasRef, socket, roomId)
     }
 
     setup()

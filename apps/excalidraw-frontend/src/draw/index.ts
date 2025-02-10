@@ -17,13 +17,14 @@ const getAllDiagram = async (roomId: string) => {
 };
 
 export function initDraw(canvasRef: React.RefObject<HTMLCanvasElement | null>,
-socket: WebSocket | null
+socket: WebSocket | null,
+roomId: string 
 ) {
+  if(!socket) return
   if (!canvasRef.current) return;
   const canvas = canvasRef.current;
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
-
   let startDraw = false;
   let startX = 0;
   let startY = 0;
@@ -37,6 +38,23 @@ socket: WebSocket | null
   const handleMouseUp = (e: MouseEvent) => {
     console.log("mouseup");
     startDraw = false;
+    const width = e.offsetX - startX;
+    const height = e.offsetY - startY;
+
+    const diagram = {
+      type: "rect",
+      x: startX,
+      y: startY,
+      height,
+      width, 
+    }
+    const message = {
+      type: "chat",
+      message: diagram,
+      roomId 
+    }
+
+    socket.send(JSON.stringify(message))
   };
   const handleMouseMove = (e: MouseEvent) => {
     if (!startDraw) return;
@@ -49,18 +67,26 @@ socket: WebSocket | null
     ctx.strokeRect(startX, startY, width, height);
   };
 
+const handleRecievingData = (e: MessageEvent) => {
+const data = JSON.parse(e.data)
 
+ctx.clearRect(0, 0, canvas.width, canvas.height);
+ctx.strokeStyle = "white";
+ctx.strokeRect(data.x, data.y, data.width, data.height);
+}
 
   canvas.addEventListener("mousedown", handleMouseDown);
   canvas.addEventListener("mouseup", handleMouseUp);
   canvas.addEventListener("mousemove", handleMouseMove);
+
+  socket.addEventListener("message", handleRecievingData)
 
 
   return () => {
     canvas.removeEventListener("mousedown", handleMouseDown);
     canvas.removeEventListener("mouseup", handleMouseUp);
     canvas.removeEventListener("mousemove", handleMouseMove);
-    
+    socket.removeEventListener("message", handleRecievingData)
 
   };
 }
