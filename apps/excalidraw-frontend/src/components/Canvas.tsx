@@ -12,7 +12,7 @@ export default function Canvas({
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    let cleanUp;
+    let cleanUp: (() => void) | undefined;
 
     const setup = async() => {
 cleanUp = await initDraw(canvasRef, socket, roomId)

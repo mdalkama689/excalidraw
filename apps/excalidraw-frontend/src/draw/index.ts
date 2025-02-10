@@ -9,14 +9,15 @@ const getAllDiagram = async (roomId: string) => {
         Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
     });
-
-    return response.data.allChats;
+return response.data.allChats
   } catch (error) {
     console.log(error);
   }
 };
 
-export function initDraw(canvasRef: React.RefObject<HTMLCanvasElement | null>,
+let allShapes = []
+
+export async function initDraw(canvasRef: React.RefObject<HTMLCanvasElement | null>,
 socket: WebSocket | null,
 roomId: string 
 ) {
@@ -25,6 +26,12 @@ roomId: string
   const canvas = canvasRef.current;
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
+
+  const response = await getAllDiagram(roomId)
+  allShapes = [...response]
+
+  clearAndPrintDiagram(ctx, canvas)
+
   let startDraw = false;
   let startX = 0;
   let startY = 0;
@@ -89,4 +96,17 @@ ctx.strokeRect(data.x, data.y, data.width, data.height);
     socket.removeEventListener("message", handleRecievingData)
 
   };
+}
+
+// diagram:{x: 98, y: 76, type: 'rect', width: 169, height: 142
+// just to access x , we need to go .diagram.x.
+
+function clearAndPrintDiagram(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement){
+
+  ctx.clearRect(0,0,canvas.width, canvas.height)
+  ctx.strokeStyle = "red"
+  allShapes.map((shape) => {
+const data = shape.diagram
+   ctx.strokeRect(data.x, data.y, data.width, data.height)
+  })
 }

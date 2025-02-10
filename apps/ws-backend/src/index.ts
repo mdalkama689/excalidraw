@@ -57,20 +57,21 @@ console.log(" parsedData.message : ", parsedData.message)
       });
   
     
-      // const chat = await client.chat.create({
-      //   data: {
-      //     text: parsedData.message,
-      //     userId,
-      //     roomId: Number(parsedData.roomId),
-      //   },
-      // });
-      // console.log("chat : ", chat);
+     await client.chat.create({
+        data: {
+          roomId: Number(parsedData.roomId),
+          userId,
+          diagram: parsedData.message 
+        }
+      })
+
+
     }
 
     if (parsedData.type === "leave_room") {
       user = user.filter((eachUser) => eachUser.socket !== ws);
     }
 
-    console.log(user.length);
+
   });
 });
