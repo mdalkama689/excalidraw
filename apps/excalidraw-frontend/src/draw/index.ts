@@ -9,28 +9,39 @@ const getAllDiagram = async (roomId: string) => {
         Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
     });
-return response.data.allChats
+    return response.data.allChats;
   } catch (error) {
     console.log(error);
   }
 };
 
-let allShapes = []
+interface ShapeProps {
+  diagram: {
+    type: string;
+    x: number;
+    y: number;
+    height: number;
+    width: number;
+  };
+}
 
-export async function initDraw(canvasRef: React.RefObject<HTMLCanvasElement | null>,
-socket: WebSocket | null,
-roomId: string 
+let allShapes: ShapeProps[] = [];
+
+export async function initDraw(
+  canvasRef: React.RefObject<HTMLCanvasElement | null>,
+  socket: WebSocket | null,
+  roomId: string
 ) {
-  if(!socket) return
+  if (!socket) return;
   if (!canvasRef.current) return;
   const canvas = canvasRef.current;
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
 
-  const response = await getAllDiagram(roomId)
-  allShapes = [...response]
+  const response = await getAllDiagram(roomId);
+  allShapes = [...response];
 
-  clearAndPrintDiagram(ctx, canvas)
+  redrawDiagramsFromDB(ctx, canvas);
 
   let startDraw = false;
   let startX = 0;
@@ -53,15 +64,16 @@ roomId: string
       x: startX,
       y: startY,
       height,
-      width, 
-    }
+      width,
+    };
+    allShapes.push({ diagram });
     const message = {
       type: "chat",
       message: diagram,
-      roomId 
-    }
+      roomId,
+    };
 
-    socket.send(JSON.stringify(message))
+    socket.send(JSON.stringify(message));
   };
   const handleMouseMove = (e: MouseEvent) => {
     if (!startDraw) return;
@@ -69,44 +81,57 @@ roomId: string
     const width = e.offsetX - startX;
     const height = e.offsetY - startY;
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    redrawExistingDiagrams(ctx, canvas);
     ctx.strokeStyle = "white";
     ctx.strokeRect(startX, startY, width, height);
   };
 
-const handleRecievingData = (e: MessageEvent) => {
-const data = JSON.parse(e.data)
+  const handleRecievingData = (e: MessageEvent) => {
+    const data = JSON.parse(e.data);
 
-ctx.clearRect(0, 0, canvas.width, canvas.height);
-ctx.strokeStyle = "white";
-ctx.strokeRect(data.x, data.y, data.width, data.height);
-}
+    allShapes.push({ diagram: data });
+    allShapes.map((shape) => {
+      console.log(shape);
+      const data = shape.diagram;
+      ctx.strokeRect(data.x, data.y, data.width, data.height);
+    });
+  };
 
   canvas.addEventListener("mousedown", handleMouseDown);
   canvas.addEventListener("mouseup", handleMouseUp);
   canvas.addEventListener("mousemove", handleMouseMove);
 
-  socket.addEventListener("message", handleRecievingData)
-
+  socket.addEventListener("message", handleRecievingData);
 
   return () => {
     canvas.removeEventListener("mousedown", handleMouseDown);
     canvas.removeEventListener("mouseup", handleMouseUp);
     canvas.removeEventListener("mousemove", handleMouseMove);
-    socket.removeEventListener("message", handleRecievingData)
-
+    socket.removeEventListener("message", handleRecievingData);
   };
 }
 
-// diagram:{x: 98, y: 76, type: 'rect', width: 169, height: 142
-// just to access x , we need to go .diagram.x.
-
-function clearAndPrintDiagram(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement){
-
-  ctx.clearRect(0,0,canvas.width, canvas.height)
-  ctx.strokeStyle = "red"
+function redrawExistingDiagrams(
+  ctx: CanvasRenderingContext2D,
+  canvas: HTMLCanvasElement
+) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.strokeStyle = "white";
   allShapes.map((shape) => {
-const data = shape.diagram
-   ctx.strokeRect(data.x, data.y, data.width, data.height)
-  })
+    console.log(shape);
+    const data = shape.diagram;
+    ctx.strokeRect(data.x, data.y, data.width, data.height);
+  });
+}
+
+function redrawDiagramsFromDB(
+  ctx: CanvasRenderingContext2D,
+  canvas: HTMLCanvasElement
+) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.strokeStyle = "white";
+  allShapes.map((shape) => {
+    const data = shape.diagram;
+    ctx.strokeRect(data.x, data.y, data.width, data.height);
+  });
 }
