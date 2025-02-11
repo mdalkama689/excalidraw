@@ -1,4 +1,5 @@
-import { initDraw } from "@/draw";
+
+import { Game } from "@/draw/Game";
 import { useEffect, useRef } from "react";
 
 export default function Canvas({
@@ -8,28 +9,25 @@ export default function Canvas({
   socket: WebSocket | null;
   roomId: string;
 }) {
-
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    let cleanUp: (() => void) | undefined;
+   
+    if(!canvasRef.current) return
+    if(!socket) return
 
-    const setup = async() => {
-cleanUp = await initDraw(canvasRef, socket, roomId)
-    }
+  const game = new Game(canvasRef.current, socket, roomId)
+  return () => {
+    game.destroyHandler()
+  }
 
-    setup()
-    return () => {
-      if(cleanUp) cleanUp()
-    }
-  }, [canvasRef])
-  
+  }, [canvasRef]);
 
   return (
     <canvas
       ref={canvasRef}
-      height={600}
-      width={500}
+      height={100}
+      width={100}
       className="border border-white"
     ></canvas>
   );
