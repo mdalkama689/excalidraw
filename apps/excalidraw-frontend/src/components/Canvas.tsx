@@ -39,8 +39,8 @@ setSelectedTool(type)
       width={window.innerWidth}
     ></canvas>
     <IconBar 
-    onClick={handleSelectTool}
-    setSelectedTool={setSelectedTool}
+    onClick={handleSelectTool} 
+    selectedTool={selectedTool}
     />
   </div>
   );
