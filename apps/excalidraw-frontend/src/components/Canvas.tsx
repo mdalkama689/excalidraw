@@ -1,6 +1,7 @@
 
 import { Game } from "@/draw/Game";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { IconBar } from "./IconBar";
 
 export default function Canvas({
   socket,
@@ -10,25 +11,37 @@ export default function Canvas({
   roomId: string;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+const [selectedTool, setSelectedTool] = useState('circle')
+
+const handleSelectTool = (type: string) => {
+setSelectedTool(type)
+}
 
   useEffect(() => {
    
     if(!canvasRef.current) return
     if(!socket) return
 
-  const game = new Game(canvasRef.current, socket, roomId)
+  const game = new Game(canvasRef.current, socket, roomId, selectedTool)
   return () => {
     game.destroyHandler()
   }
 
-  }, [canvasRef]);
+  }, [canvasRef, selectedTool]);
 
   return (
-    <canvas
+  <div
+  className="h-screen overflow-hidden"
+  >
+      <canvas
       ref={canvasRef}
-      height={100}
-      width={100}
-      className="border border-white"
+      height={window.innerHeight}
+      width={window.innerWidth}
     ></canvas>
+    <IconBar 
+    onClick={handleSelectTool}
+    setSelectedTool={setSelectedTool}
+    />
+  </div>
   );
 }
