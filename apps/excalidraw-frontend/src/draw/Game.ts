@@ -1,4 +1,6 @@
+import { log } from "console";
 import { getAllDiagram } from "./http";
+import { LargeNumberLike } from "crypto";
 
 interface rectangle {
   type: string;
@@ -15,8 +17,17 @@ interface circle {
   radius: number;
 }
 
+interface arrow {
+  type: string;
+  x: number;
+  y: number;
+  toX: number;
+  toY: number;
+  angle: number;
+  headlen: number;
+}
 interface ShapeProps {
-  diagram: rectangle | circle;
+  diagram: rectangle | circle | arrow;
 }
 
 export class Game {
@@ -29,6 +40,8 @@ export class Game {
   private startY: number = 0;
   private ctx: CanvasRenderingContext2D;
   private selectedTool: string;
+  private diagram;
+  
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -77,50 +90,26 @@ export class Game {
     console.log("mouseup");
     this.startDraw = false;
 
+    const width = e.offsetX - this.startX;
+    const height = e.offsetY - this.startY;
+
     if (this.selectedTool === "rectangle") {
-      const width = e.offsetX - this.startX;
-      const height = e.offsetY - this.startY;
-
-      const diagram = {
-        type: "rectangle",
-        x: this.startX,
-        y: this.startY,
-        height,
-        width,
-      };
-
-      this.allShapes.push({ diagram });
-      const message = {
-        type: "chat",
-        message: diagram,
-        roomId: this.roomId,
-      };
-
-      this.socket.send(JSON.stringify(message));
+      this.createRectanlge(width, height);
     } else if (this.selectedTool === "circle") {
-      const width = e.offsetX - this.startX;
-      const height = e.offsetY - this.startY;
-
-      const centerX = this.startX + width / 2;
-      const centerY = this.startY + height / 2;
-      const radius = Math.sqrt(width ** 2 + height ** 2) / 2;
-
-      const diagram = {
-        type: "circle",
-        centerX,
-        centerY,
-        radius,
-      };
-
-      this.allShapes.push({ diagram });
-      const message = {
-        type: "chat",
-        message: diagram,
-        roomId: this.roomId,
-      };
-
-      this.socket.send(JSON.stringify(message));
+      this.createCirlce(width, height);
     }
+
+    if (!this.diagram) return;
+
+    this.allShapes.push({ diagram: this.diagram });
+
+    const message = {
+      type: "chat",
+      message: this.diagram,
+      roomId: this.roomId,
+    };
+
+    this.socket.send(JSON.stringify(message));
   };
 
   handleMouseMove = (e: MouseEvent) => {
@@ -128,37 +117,33 @@ export class Game {
 
     const width = e.offsetX - this.startX;
     const height = e.offsetY - this.startY;
+    const centerX = this.startX + width / 2;
+    const centerY = this.startY + height / 2;
+    const radius = Math.sqrt(width ** 2 + height ** 2) / 2;
 
     this.redrawExistingDiagrams();
+    this.ctx.strokeStyle = "white";
 
     if (this.selectedTool === "rectangle") {
-      this.ctx.strokeStyle = "white";
-      this.ctx.strokeRect(this.startX, this.startY, width, height);
+      this.printRectangle(this.startX, this.startY, width, height);
     } else if (this.selectedTool === "circle") {
-      const centerX = this.startX + width / 2;
-      const centerY = this.startY + height / 2;
-      const radius = Math.sqrt(width ** 2 + height ** 2) / 2;
-
-      this.ctx.beginPath();
-      this.ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-      this.ctx.stroke();
+      this.printCircle(centerX, centerY, radius);
     }
   };
 
   handleRecievingData = (e: MessageEvent) => {
     const data = JSON.parse(e.data);
 
+    console.log("reciveing data : ", data);
     this.allShapes.push({ diagram: data });
 
     this.allShapes.forEach((shape) => {
       const data = shape.diagram;
 
       if (data.type === "rectangle") {
-        this.ctx.strokeRect(data.x, data.y, data.width, data.height);
+        this.printRectangle(data.x, data.y, data.width, data.height);
       } else if (data.type === "circle") {
-        this.ctx.beginPath();
-        this.ctx.arc(data.centerX, data.centerY, data.radius, 0, Math.PI * 2);
-        this.ctx.stroke();
+        this.printCircle(data.centerX, data.centerY, data.radius);
       }
     });
   };
@@ -171,11 +156,9 @@ export class Game {
       const data = shape.diagram;
 
       if (data.type === "rectangle") {
-        this.ctx.strokeRect(data.x, data.y, data.width, data.height);
+        this.printRectangle(data.x, data.y, data.width, data.height);
       } else if (data.type === "circle") {
-        this.ctx.beginPath();
-        this.ctx.arc(data.centerX, data.centerY, data.radius, 0, Math.PI * 2);
-        this.ctx.stroke();
+        this.printCircle(data.centerX, data.centerY, data.radius)
       }
     });
   }
@@ -188,12 +171,54 @@ export class Game {
       const data = shape.diagram;
 
       if (data.type === "rectangle") {
-        this.ctx.strokeRect(data.x, data.y, data.width, data.height);
+        this.printRectangle(data.x, data.y, data.width, data.height);
       } else if (data.type === "circle") {
-        this.ctx.beginPath();
-        this.ctx.arc(data.centerX, data.centerY, data.radius, 0, Math.PI * 2);
-        this.ctx.stroke();
+        this.printCircle(data.centerX, data.centerY, data.radius)
+  
       }
     });
+  }
+
+  createRectanlge(width: number, height: number) {
+    this.diagram = {
+      type: "rectangle",
+      x: this.startX,
+      y: this.startY,
+      height,
+      width,
+    };
+
+    return this.diagram;
+  }
+
+  createCirlce(width: number, height: number) {
+    const centerX = this.startX + width / 2;
+    const centerY = this.startY + height / 2;
+
+    const radius = Math.sqrt(width ** 2 + height ** 2) / 2;
+
+    this.diagram = {
+      type: "circle",
+      centerX,
+      centerY,
+      radius,
+    };
+
+    return this.diagram;
+  }
+
+  printRectangle(
+    startX: number,
+    startY: number,
+    width: number,
+    height: number
+  ) {
+    this.ctx.strokeRect(startX, startY, width, height);
+  }
+
+  printCircle(centerX: number, centerY: number, radius: number) {
+    this.ctx.beginPath();
+    this.ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    this.ctx.stroke();
   }
 }
