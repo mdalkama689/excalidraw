@@ -12,6 +12,8 @@ export default function Canvas({
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 const [selectedTool, setSelectedTool] = useState('circle')
+const [game, setGame] = useState(null)
+
 
 const handleSelectTool = (type: string) => {
 setSelectedTool(type)
@@ -23,6 +25,8 @@ setSelectedTool(type)
     if(!socket) return
 
   const game = new Game(canvasRef.current, socket, roomId, selectedTool)
+
+
   return () => {
     game.destroyHandler()
   }

@@ -41,7 +41,6 @@ export class Game {
   private ctx: CanvasRenderingContext2D;
   private selectedTool: string;
   private diagram;
-  
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -52,10 +51,10 @@ export class Game {
     this.canvas = canvas;
     this.socket = socket;
     this.roomId = roomId;
-    this.selectedTool = selectedTool;
     this.ctx = canvas.getContext("2d")!;
     this.initDraw();
     this.initHandler();
+    this.selectedTool = selectedTool;
   }
 
   async initDraw() {
@@ -97,6 +96,8 @@ export class Game {
       this.createRectanlge(width, height);
     } else if (this.selectedTool === "circle") {
       this.createCirlce(width, height);
+    } else if(this.selectedTool === 'arrow'){
+      this.createArrow(e.offsetX, e.offsetY)
     }
 
     if (!this.diagram) return;
@@ -128,6 +129,8 @@ export class Game {
       this.printRectangle(this.startX, this.startY, width, height);
     } else if (this.selectedTool === "circle") {
       this.printCircle(centerX, centerY, radius);
+    } else if (this.selectedTool === "arrow") {
+      this.printArrowForMove(e.offsetX, e.offsetY);
     }
   };
 
@@ -144,6 +147,9 @@ export class Game {
         this.printRectangle(data.x, data.y, data.width, data.height);
       } else if (data.type === "circle") {
         this.printCircle(data.centerX, data.centerY, data.radius);
+      }else if(data.type === 'arrow'){
+        this.printArrow(data.fromX, data.fromY, data.toX, data.toY, data.angle, data.headlen)
+       
       }
     });
   };
@@ -158,7 +164,10 @@ export class Game {
       if (data.type === "rectangle") {
         this.printRectangle(data.x, data.y, data.width, data.height);
       } else if (data.type === "circle") {
-        this.printCircle(data.centerX, data.centerY, data.radius)
+        this.printCircle(data.centerX, data.centerY, data.radius);
+      }else if(data.type === 'arrow'){
+        this.printArrow(data.fromX, data.fromY, data.toX, data.toY, data.angle, data.headlen)
+     
       }
     });
   }
@@ -173,8 +182,10 @@ export class Game {
       if (data.type === "rectangle") {
         this.printRectangle(data.x, data.y, data.width, data.height);
       } else if (data.type === "circle") {
-        this.printCircle(data.centerX, data.centerY, data.radius)
-  
+        this.printCircle(data.centerX, data.centerY, data.radius);
+      }else if(data.type === 'arrow'){
+        this.printArrow(data.fromX, data.fromY, data.toX, data.toY, data.angle, data.headlen)
+     
       }
     });
   }
@@ -207,6 +218,32 @@ export class Game {
     return this.diagram;
   }
 
+  createArrow(offsetX: number, offsetY: number) {
+    const fromX = this.startX;
+    const fromY = this.startY;
+    const toX = offsetX;
+    const toY = offsetY;
+    const headlen = 10;
+
+    const distanceX = toX - fromX;
+    const distanceY = toY - fromY;
+
+const angle = Math.atan2(distanceY, distanceX)
+
+
+    this.diagram = {
+      type: 'arrow',
+      fromX,
+      fromY,
+      toX,
+      toY,
+      headlen,
+      angle
+    }
+
+    return this.diagram
+  }
+
   printRectangle(
     startX: number,
     startY: number,
@@ -219,6 +256,52 @@ export class Game {
   printCircle(centerX: number, centerY: number, radius: number) {
     this.ctx.beginPath();
     this.ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    this.ctx.stroke();
+  }
+
+
+  printArrowForMove(offsetX: number, offsetY: number) {
+    this.ctx.beginPath();
+    const fromX = this.startX;
+    const fromY = this.startY;
+    const toX = offsetX;
+    const toY = offsetY;
+
+    const headlen = 10;
+    const distanceX = toX - fromX;
+    const distanceY = toY - fromY;
+
+    const angle = Math.atan2(distanceY, distanceX);
+
+    this.ctx.moveTo(fromX, fromY);
+    this.ctx.lineTo(toX, toY);
+    this.ctx.lineTo(
+      toX - headlen * Math.cos(angle - Math.PI / 6),
+      toY - headlen * Math.sin(angle - Math.PI / 6)
+    );
+    this.ctx.moveTo(toX, toY);
+    this.ctx.lineTo(
+      toX - headlen * Math.cos(angle + Math.PI / 6),
+      toY - headlen * Math.sin(angle + Math.PI / 6)
+    );
+    this.ctx.stroke();
+  }
+
+  printArrow(fromX: number, fromY: number, toX: number, toY:number, angle: number, headlen: number) {
+    this.ctx.beginPath();
+
+
+    this.ctx.moveTo(fromX, fromY);
+    this.ctx.lineTo(toX, toY);
+    this.ctx.lineTo(
+      toX - headlen * Math.cos(angle - Math.PI / 6),
+      toY - headlen * Math.sin(angle - Math.PI / 6)
+    );
+    this.ctx.moveTo(toX, toY);
+    this.ctx.lineTo(
+      toX - headlen * Math.cos(angle + Math.PI / 6),
+      toY - headlen * Math.sin(angle + Math.PI / 6)
+    );
     this.ctx.stroke();
   }
 }
