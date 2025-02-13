@@ -37,15 +37,14 @@ export class Game {
   private startX: number = 0;
   private startY: number = 0;
   private ctx: CanvasRenderingContext2D;
-  private selectedTool: string;
-  private diagram: any;
-  private pencilArray = [];
+  private selectedTool: string = 'circle'
+  private diagram;
+  private pencilArray = []; 
 
   constructor(
     canvas: HTMLCanvasElement,
     socket: WebSocket,
-    roomId: string,
-    selectedTool: string
+    roomId: string 
   ) {
     this.canvas = canvas;
     this.socket = socket;
@@ -53,9 +52,11 @@ export class Game {
     this.ctx = canvas.getContext("2d")!;
     this.initDraw();
     this.initHandler();
-    this.selectedTool = selectedTool;
   }
 
+  setTool(tool: string){
+    this.selectedTool = tool
+  }
   async initDraw() {
     const response = await getAllDiagram(this.roomId);
     this.allShapes = [...response];

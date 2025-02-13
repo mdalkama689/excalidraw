@@ -19,19 +19,24 @@ const handleSelectTool = (type: string) => {
 setSelectedTool(type)
 }
 
+useEffect(() => {
+if(game){
+  game.setTool(selectedTool)
+}
+}, [selectedTool,game])
   useEffect(() => {
    
     if(!canvasRef.current) return
     if(!socket) return
 
-  const game = new Game(canvasRef.current, socket, roomId, selectedTool)
+  const g = new Game(canvasRef.current, socket, roomId, selectedTool)
 
-
+setGame(g)
   return () => {
-    game.destroyHandler()
+    g.destroyHandler()
   }
 
-  }, [canvasRef, selectedTool]);
+  }, [canvasRef]);
 
   return (
   <div
