@@ -1,6 +1,4 @@
-import { log } from "console";
 import { getAllDiagram } from "./http";
-import { LargeNumberLike } from "crypto";
 
 interface rectangle {
   type: string;
@@ -40,7 +38,8 @@ export class Game {
   private startY: number = 0;
   private ctx: CanvasRenderingContext2D;
   private selectedTool: string;
-  private diagram;
+  private diagram: any;
+  private pencilArray = [];
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -83,6 +82,7 @@ export class Game {
     this.startX = e.offsetX;
     this.startY = e.offsetY;
     console.log(this.selectedTool);
+    
   };
 
   handleMouseUp = (e: MouseEvent) => {
@@ -96,8 +96,10 @@ export class Game {
       this.createRectanlge(width, height);
     } else if (this.selectedTool === "circle") {
       this.createCirlce(width, height);
-    } else if(this.selectedTool === 'arrow'){
-      this.createArrow(e.offsetX, e.offsetY)
+    } else if (this.selectedTool === "arrow") {
+      this.createArrow(e.offsetX, e.offsetY);
+    } else if (this.selectedTool === "pencil") { 
+    this.createPencil()
     }
 
     if (!this.diagram) return;
@@ -131,6 +133,10 @@ export class Game {
       this.printCircle(centerX, centerY, radius);
     } else if (this.selectedTool === "arrow") {
       this.printArrowForMove(e.offsetX, e.offsetY);
+    } else if (this.selectedTool === "pencil") {
+      // @ts-ignore
+      this.pencilArray.push({ x: e.offsetX, y: e.offsetY });
+      this.drawLine();
     }
   };
 
@@ -144,12 +150,30 @@ export class Game {
       const data = shape.diagram;
 
       if (data.type === "rectangle") {
+        // @ts-ignore
         this.printRectangle(data.x, data.y, data.width, data.height);
       } else if (data.type === "circle") {
+        // @ts-ignore
         this.printCircle(data.centerX, data.centerY, data.radius);
-      }else if(data.type === 'arrow'){
-        this.printArrow(data.fromX, data.fromY, data.toX, data.toY, data.angle, data.headlen)
-       
+      } else if (data.type === "arrow") {
+        // @ts-ignore
+        this.printArrow(
+          data.fromX,
+          data.fromY,
+          data.toX,
+          data.toY,
+          data.angle,
+          data.headlen
+        );
+      }  else if (data.type === "pencil") {
+        this.ctx.beginPath();
+        // @ts-ignore
+        this.ctx.moveTo(data.pencilValue[0].x, data.pencilValue[0].y);
+        // @ts-ignore
+        data.pencilValue.map((p) => {
+          this.ctx.lineTo(p.x, p.y);
+        });
+        this.ctx.stroke();
       }
     });
   };
@@ -161,13 +185,34 @@ export class Game {
     this.allShapes.forEach((shape) => {
       const data = shape.diagram;
 
+      console.log("data in redraw : ", data);
+
       if (data.type === "rectangle") {
+        // @ts-ignore
         this.printRectangle(data.x, data.y, data.width, data.height);
       } else if (data.type === "circle") {
+        // @ts-ignore
         this.printCircle(data.centerX, data.centerY, data.radius);
-      }else if(data.type === 'arrow'){
-        this.printArrow(data.fromX, data.fromY, data.toX, data.toY, data.angle, data.headlen)
-     
+      } else if (data.type === "arrow") {
+        // @ts-ignore
+        this.printArrow(
+          data.fromX,
+          data.fromY,
+          data.toX,
+          data.toY,
+          data.angle,
+          data.headlen
+        );
+      }
+       else if (data.type === "pencil") {
+        this.ctx.beginPath();
+        // @ts-ignore
+        this.ctx.moveTo(data.pencilValue[0].x, data.pencilValue[0].y);
+        // @ts-ignore
+        data.pencilValue.map((p) => {
+          this.ctx.lineTo(p.x, p.y);
+        });
+        this.ctx.stroke();
       }
     });
   }
@@ -180,12 +225,30 @@ export class Game {
       const data = shape.diagram;
 
       if (data.type === "rectangle") {
+        // @ts-ignore
         this.printRectangle(data.x, data.y, data.width, data.height);
       } else if (data.type === "circle") {
+        // @ts-ignore
         this.printCircle(data.centerX, data.centerY, data.radius);
-      }else if(data.type === 'arrow'){
-        this.printArrow(data.fromX, data.fromY, data.toX, data.toY, data.angle, data.headlen)
-     
+      } else if (data.type === "arrow") {
+        // @ts-ignore
+        this.printArrow(
+          data.fromX,
+          data.fromY,
+          data.toX,
+          data.toY,
+          data.angle,
+          data.headlen
+        );
+      }   else if (data.type === "pencil") {
+        this.ctx.beginPath();
+        // @ts-ignore
+        this.ctx.moveTo(data.pencilValue[0].x, data.pencilValue[0].y);
+        // @ts-ignore
+        data.pencilValue.map((p) => {
+          this.ctx.lineTo(p.x, p.y);
+        });
+        this.ctx.stroke();
       }
     });
   }
@@ -228,22 +291,33 @@ export class Game {
     const distanceX = toX - fromX;
     const distanceY = toY - fromY;
 
-const angle = Math.atan2(distanceY, distanceX)
-
+    const angle = Math.atan2(distanceY, distanceX);
 
     this.diagram = {
-      type: 'arrow',
+      type: "arrow",
       fromX,
       fromY,
       toX,
       toY,
       headlen,
-      angle
-    }
+      angle,
+    };
 
-    return this.diagram
+    return this.diagram;
   }
 
+  createPencil(){
+    const pencilValue = this.pencilArray;
+    this.diagram = {
+      type: "pencil",
+      pencilValue,
+    };
+
+    if (this.pencilArray.length > 0) {
+      this.pencilArray = [];
+    }
+    return this.diagram
+  }
   printRectangle(
     startX: number,
     startY: number,
@@ -258,7 +332,6 @@ const angle = Math.atan2(distanceY, distanceX)
     this.ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
     this.ctx.stroke();
   }
-
 
   printArrowForMove(offsetX: number, offsetY: number) {
     this.ctx.beginPath();
@@ -287,9 +360,15 @@ const angle = Math.atan2(distanceY, distanceX)
     this.ctx.stroke();
   }
 
-  printArrow(fromX: number, fromY: number, toX: number, toY:number, angle: number, headlen: number) {
+  printArrow(
+    fromX: number,
+    fromY: number,
+    toX: number,
+    toY: number,
+    angle: number,
+    headlen: number
+  ) {
     this.ctx.beginPath();
-
 
     this.ctx.moveTo(fromX, fromY);
     this.ctx.lineTo(toX, toY);
@@ -302,6 +381,19 @@ const angle = Math.atan2(distanceY, distanceX)
       toX - headlen * Math.cos(angle + Math.PI / 6),
       toY - headlen * Math.sin(angle + Math.PI / 6)
     );
+    this.ctx.stroke();
+  }
+
+  drawLine() {
+    this.ctx.beginPath();
+    // @ts-ignore
+    this.ctx.moveTo(this.pencilArray[0].x, this.pencilArray[0].y);
+    // @ts-ignore
+    this.pencilArray.map((p) => {
+      // @ts-ignore
+      this.ctx.lineTo(p.x, p.y);
+    });
+
     this.ctx.stroke();
   }
 }
