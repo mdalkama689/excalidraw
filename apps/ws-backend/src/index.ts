@@ -61,7 +61,8 @@ console.log(" parsedData.message : ", parsedData.message)
         data: {
           roomId: Number(parsedData.roomId),
           userId,
-          diagram: parsedData.message 
+          diagram: parsedData.message ,
+          diagramId: parsedData.message.id 
         }
       })
 
@@ -72,6 +73,14 @@ console.log(" parsedData.message : ", parsedData.message)
       user = user.filter((eachUser) => eachUser.socket !== ws);
     }
 
+    if(parsedData.type === 'erase'){
+      console.log('erase')
+   await client.chat.delete({
+      where: {
+     diagramId: parsedData.id 
+      }
+     })
+    }
 
   });
 });

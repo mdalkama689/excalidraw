@@ -20,8 +20,8 @@ model User {
 
 model Chat {
   id     Int    @id @default(autoincrement())
-  text  String?
  diagram Json
+ diagramId String @unique
   userId Int
   user   User   @relation(fields: [userId], references: [id])
   roomId Int

@@ -1,6 +1,8 @@
 import { getAllDiagram } from "./http";
+import { v4 as uuid } from "uuid";
 
 interface rectangle {
+  id: string;
   type: string;
   x: number;
   y: number;
@@ -9,6 +11,7 @@ interface rectangle {
 }
 
 interface circle {
+  id: string;
   type: string;
   centerX: number;
   centerY: number;
@@ -16,6 +19,7 @@ interface circle {
 }
 
 interface arrow {
+  id: string;
   type: string;
   x: number;
   y: number;
@@ -24,28 +28,33 @@ interface arrow {
   angle: number;
   headlen: number;
 }
+
+interface pencil {
+  id: string;
+  type: "pencil";
+  pencilValue: [{ x: number; y: number }];
+}
+
 interface ShapeProps {
-  diagram: rectangle | circle | arrow;
+  diagram: rectangle | circle | arrow | pencil;
 }
 
 export class Game {
   private allShapes: ShapeProps[] = [];
-  private canvas: HTMLCanvasElement;
+  private canvas: any;
   private socket: WebSocket;
   private roomId: string;
   private startDraw: boolean = false;
   private startX: number = 0;
   private startY: number = 0;
   private ctx: CanvasRenderingContext2D;
-  private selectedTool: string = 'circle'
+  private selectedTool: string = "circle";
   private diagram;
-  private pencilArray = []; 
+  private pencilArray = [];
+  private clickX: number = 0;
+  private clickY: number = 0;
 
-  constructor(
-    canvas: HTMLCanvasElement,
-    socket: WebSocket,
-    roomId: string 
-  ) {
+  constructor(canvas: any, socket: WebSocket, roomId: string) {
     this.canvas = canvas;
     this.socket = socket;
     this.roomId = roomId;
@@ -54,11 +63,11 @@ export class Game {
     this.initHandler();
   }
 
-  setTool(tool: string){
-    this.selectedTool = tool
+  setTool(tool: string) {
+    this.selectedTool = tool;
   }
   async initDraw() {
-    const response = await getAllDiagram(this.roomId);
+    const response = await getAllDiagram(this.roomId); 
     this.allShapes = [...response];
     this.redrawDiagramsFromDB();
   }
@@ -82,8 +91,43 @@ export class Game {
     this.startDraw = true;
     this.startX = e.offsetX;
     this.startY = e.offsetY;
-    console.log(this.selectedTool);
-    
+
+    if (this.selectedTool === "eraser") {
+      this.clickX = e.offsetX;
+      this.clickY = e.offsetY;
+
+      alert("eraser");
+      this.allShapes.map((shape) => {
+        const data = shape.diagram;
+        if (data.type === "rectangle") {
+          const minX = data.x;
+          const maxX = data.x + data.width;
+          const minY = data.y;
+          const maxY = data.y + data.height;
+
+          const con1 = minX <= this.clickX && this.clickX <= maxX;
+          const con2 = minY <= this.clickY && this.clickY <= maxY;
+
+          console.log("con 1 and con 2 : ", con1, con2);
+          console.log(this.allShapes.length);
+          if (con1 && con2) {
+            const message = {
+              type: "erase",
+              id: data.id,
+              roomId: this.roomId,
+            };
+        
+            this.socket.send(JSON.stringify(message));
+            console.log(data.id);
+            this.allShapes = this.allShapes.filter(
+              (x) => x.diagram.id != data.id
+            );
+          }
+
+          console.log(this.allShapes.length);
+        }
+      });
+    }
   };
 
   handleMouseUp = (e: MouseEvent) => {
@@ -99,8 +143,8 @@ export class Game {
       this.createCirlce(width, height);
     } else if (this.selectedTool === "arrow") {
       this.createArrow(e.offsetX, e.offsetY);
-    } else if (this.selectedTool === "pencil") { 
-    this.createPencil()
+    } else if (this.selectedTool === "pencil") {
+      this.createPencil();
     }
 
     if (!this.diagram) return;
@@ -137,7 +181,7 @@ export class Game {
     } else if (this.selectedTool === "pencil") {
       // @ts-ignore
       this.pencilArray.push({ x: e.offsetX, y: e.offsetY });
-      this.drawLine();
+      this.drawPencil();
     }
   };
 
@@ -166,7 +210,7 @@ export class Game {
           data.angle,
           data.headlen
         );
-      }  else if (data.type === "pencil") {
+      } else if (data.type === "pencil") {
         this.ctx.beginPath();
         // @ts-ignore
         this.ctx.moveTo(data.pencilValue[0].x, data.pencilValue[0].y);
@@ -186,8 +230,6 @@ export class Game {
     this.allShapes.forEach((shape) => {
       const data = shape.diagram;
 
-      console.log("data in redraw : ", data);
-
       if (data.type === "rectangle") {
         // @ts-ignore
         this.printRectangle(data.x, data.y, data.width, data.height);
@@ -204,8 +246,7 @@ export class Game {
           data.angle,
           data.headlen
         );
-      }
-       else if (data.type === "pencil") {
+      } else if (data.type === "pencil") {
         this.ctx.beginPath();
         // @ts-ignore
         this.ctx.moveTo(data.pencilValue[0].x, data.pencilValue[0].y);
@@ -241,7 +282,7 @@ export class Game {
           data.angle,
           data.headlen
         );
-      }   else if (data.type === "pencil") {
+      } else if (data.type === "pencil") {
         this.ctx.beginPath();
         // @ts-ignore
         this.ctx.moveTo(data.pencilValue[0].x, data.pencilValue[0].y);
@@ -256,6 +297,7 @@ export class Game {
 
   createRectanlge(width: number, height: number) {
     this.diagram = {
+      id: uuid(),
       type: "rectangle",
       x: this.startX,
       y: this.startY,
@@ -273,6 +315,7 @@ export class Game {
     const radius = Math.sqrt(width ** 2 + height ** 2) / 2;
 
     this.diagram = {
+      id: uuid(),
       type: "circle",
       centerX,
       centerY,
@@ -295,6 +338,7 @@ export class Game {
     const angle = Math.atan2(distanceY, distanceX);
 
     this.diagram = {
+      id: uuid(),
       type: "arrow",
       fromX,
       fromY,
@@ -307,9 +351,10 @@ export class Game {
     return this.diagram;
   }
 
-  createPencil(){
+  createPencil() {
     const pencilValue = this.pencilArray;
     this.diagram = {
+      id: uuid(),
       type: "pencil",
       pencilValue,
     };
@@ -317,8 +362,9 @@ export class Game {
     if (this.pencilArray.length > 0) {
       this.pencilArray = [];
     }
-    return this.diagram
+    return this.diagram;
   }
+
   printRectangle(
     startX: number,
     startY: number,
@@ -385,7 +431,7 @@ export class Game {
     this.ctx.stroke();
   }
 
-  drawLine() {
+  drawPencil() {
     this.ctx.beginPath();
     // @ts-ignore
     this.ctx.moveTo(this.pencilArray[0].x, this.pencilArray[0].y);

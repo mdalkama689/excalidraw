@@ -1,21 +1,17 @@
-
-const arr = []
-
-const data = {
-    type: "rect",
-    x: 120,
-    y: 120
-}
-
-arr.push(data)
-
-const pencilValue = [{x:10, y: 20},  {x:30, y: 40},  {x:50, y: 60}, {x:70, y: 80}]
-
-const data2  = {
-    type: "pencil",
-pencilValue
-}
-
-arr.push(data2)
-
-console.log(arr)
+[
+    {
+      id: 1806,
+      text: null,
+      diagram: {
+        x: 201,
+        y: 159,
+        id: '3e2f2714-fb1e-40b5-a23b-9919883f7506',
+        type: 'rectangle',
+        width: 294,
+        height: 218
+      },
+      userId: 20,
+      roomId: 91
+    }
+  ]
+  

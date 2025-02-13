@@ -1,4 +1,3 @@
-
 import { Game } from "@/draw/Game";
 import { useEffect, useRef, useState } from "react";
 import { IconBar } from "./IconBar";
@@ -11,46 +10,38 @@ export default function Canvas({
   roomId: string;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-const [selectedTool, setSelectedTool] = useState('circle')
-const [game, setGame] = useState(null)
+  const [selectedTool, setSelectedTool] = useState("circle");
+  const [game, setGame] = useState<Game | null>(null);
 
+  const handleSelectTool = (type: string) => {
+    setSelectedTool(type);
+  };
 
-const handleSelectTool = (type: string) => {
-setSelectedTool(type)
-}
-
-useEffect(() => {
-if(game){
-  game.setTool(selectedTool)
-}
-}, [selectedTool,game])
   useEffect(() => {
-   
-    if(!canvasRef.current) return
-    if(!socket) return
+    if (game) {
+      game.setTool(selectedTool);
+    }
+  }, [selectedTool, game]);
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    if (!socket) return;
 
-  const g = new Game(canvasRef.current, socket, roomId, selectedTool)
+    const g = new Game(canvasRef.current, socket, roomId);
 
-setGame(g)
-  return () => {
-    g.destroyHandler()
-  }
-
+    setGame(g);
+    return () => {
+      g.destroyHandler();
+    };
   }, [canvasRef]);
 
   return (
-  <div
-  className="h-screen overflow-hidden"
-  >
+    <div className="h-screen overflow-hidden w-full">
       <canvas
-      ref={canvasRef}
-      height={window.innerHeight}
-      width={window.innerWidth}
-    ></canvas>
-    <IconBar 
-    onClick={handleSelectTool} 
-    selectedTool={selectedTool}
-    />
-  </div>
+        ref={canvasRef}
+        height={window.innerHeight}
+        width={window.innerWidth}
+      ></canvas>
+      <IconBar onClick={handleSelectTool} selectedTool={selectedTool} />
+    </div>
   );
 }
