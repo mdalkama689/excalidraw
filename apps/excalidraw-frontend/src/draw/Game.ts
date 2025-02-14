@@ -49,7 +49,7 @@ export class Game {
   private startY: number = 0;
   private ctx: CanvasRenderingContext2D;
   private selectedTool: string = "circle";
-  private diagram;
+  private diagram: any;
   private pencilArray = [];
   private clickX: number = 0;
   private clickY: number = 0;
@@ -67,7 +67,7 @@ export class Game {
     this.selectedTool = tool;
   }
   async initDraw() {
-    const response = await getAllDiagram(this.roomId); 
+    const response = await getAllDiagram(this.roomId);
     this.allShapes = [...response];
     this.redrawDiagramsFromDB();
   }
@@ -87,17 +87,17 @@ export class Game {
   }
 
   handleMouseDown = (e: MouseEvent) => {
-    console.log("mouse down");
     this.startDraw = true;
     this.startX = e.offsetX;
     this.startY = e.offsetY;
+
+    console.log("this. selecetedtool in mouse up  : ", this.selectedTool);
 
     if (this.selectedTool === "eraser") {
       this.clickX = e.offsetX;
       this.clickY = e.offsetY;
 
-      alert("eraser");
-      this.allShapes.map((shape) => {
+      this.allShapes.map((shape: any) => {
         const data = shape.diagram;
         if (data.type === "rectangle") {
           const minX = data.x;
@@ -105,48 +105,117 @@ export class Game {
           const minY = data.y;
           const maxY = data.y + data.height;
 
-          const con1 = minX <= this.clickX && this.clickX <= maxX;
-          const con2 = minY <= this.clickY && this.clickY <= maxY;
+          const condition1 = minX <= this.clickX && this.clickX <= maxX;
+          const condition2 = minY <= this.clickY && this.clickY <= maxY;
 
-          console.log("con 1 and con 2 : ", con1, con2);
-          console.log(this.allShapes.length);
-          if (con1 && con2) {
+          if (condition1 && condition2) {
             const message = {
               type: "erase",
               id: data.id,
               roomId: this.roomId,
             };
-        
+
             this.socket.send(JSON.stringify(message));
-            console.log(data.id);
+
             this.allShapes = this.allShapes.filter(
               (x) => x.diagram.id != data.id
             );
           }
+        } else if (data.type === "circle") {
+          let x = this.clickX - data.centerX;
+          let y = this.clickY - data.centerY;
+          x = x * x;
+          y = y * y;
 
-          console.log(this.allShapes.length);
+          const ans = Math.sqrt(x + y);
+
+          if (ans <= data.radius) {
+            const message = {
+              type: "erase",
+              id: data.id,
+              roomId: this.roomId,
+            };
+
+            this.socket.send(JSON.stringify(message));
+
+            this.allShapes = this.allShapes.filter(
+              (x) => x.diagram.id != data.id
+            );
+          }
+        } else if (data.type === "arrow") {
+          const clickResult = this.isPointNearArrow(data);
+
+          if (clickResult === "exact" || clickResult === "near") {
+            const message = {
+              type: "erase",
+              id: data.id,
+              roomId: this.roomId,
+            };
+            this.socket.send(JSON.stringify(message));
+            this.allShapes = this.allShapes.filter(
+              (x) => x.diagram.id != data.id
+            );
+          }
         }
       });
+      this.redrawExistingDiagrams();
     }
   };
 
   handleMouseUp = (e: MouseEvent) => {
-    console.log("mouseup");
     this.startDraw = false;
 
+    console.log("this. selecetedtool in mouse up  : ", this.selectedTool);
     const width = e.offsetX - this.startX;
     const height = e.offsetY - this.startY;
 
     if (this.selectedTool === "rectangle") {
       this.createRectanlge(width, height);
+      console.log(
+        "this. selecetedtool insied if reacta mouse up  : ",
+        this.selectedTool
+      );
     } else if (this.selectedTool === "circle") {
       this.createCirlce(width, height);
+      console.log(
+        "this. selecetedtool insied ifcircle mouse up  : ",
+        this.selectedTool
+      );
     } else if (this.selectedTool === "arrow") {
       this.createArrow(e.offsetX, e.offsetY);
+      console.log(
+        "this. selecetedtool insied ifarrow mouse up  : ",
+        this.selectedTool
+      );
     } else if (this.selectedTool === "pencil") {
       this.createPencil();
+      console.log(
+        "this. selecetedtool insied if pencil mouse up  : ",
+        this.selectedTool
+      );
     }
 
+    const radius = Math.sqrt(width ** 2 + height ** 2) / 2;
+    // this is code repetation some after some time
+
+    const fromX = this.startX;
+    const fromY = this.startY;
+    const toX = e.offsetX;
+    const toY = e.offsetY;
+
+    const distanceX = toX - fromX;
+    const distanceY = toY - fromY;
+
+    const angle = Math.atan2(distanceY, distanceX);
+
+    if (
+      height === 0 &&
+      width === 0 &&
+      radius === 0 &&
+      this.pencilArray.length === 0 &&
+      angle === 0
+    )
+      return;
     if (!this.diagram) return;
 
     this.allShapes.push({ diagram: this.diagram });
@@ -156,7 +225,7 @@ export class Game {
       message: this.diagram,
       roomId: this.roomId,
     };
-
+    console.log(this.diagram);
     this.socket.send(JSON.stringify(message));
   };
 
@@ -182,26 +251,24 @@ export class Game {
       // @ts-ignore
       this.pencilArray.push({ x: e.offsetX, y: e.offsetY });
       this.drawPencil();
+    } else if (this.selectedTool === "eraser") {
+      // console.log('eraser')
     }
   };
 
-  handleRecievingData = (e: MessageEvent) => {
-    const data = JSON.parse(e.data);
-
-    console.log("reciveing data : ", data);
+  handleRecievingData = (message: MessageEvent) => {
+    const data = JSON.parse(message.data);
+    console.log(data);
     this.allShapes.push({ diagram: data });
 
-    this.allShapes.forEach((shape) => {
+    this.allShapes.forEach((shape: any) => {
       const data = shape.diagram;
 
       if (data.type === "rectangle") {
-        // @ts-ignore
         this.printRectangle(data.x, data.y, data.width, data.height);
       } else if (data.type === "circle") {
-        // @ts-ignore
         this.printCircle(data.centerX, data.centerY, data.radius);
       } else if (data.type === "arrow") {
-        // @ts-ignore
         this.printArrow(
           data.fromX,
           data.fromY,
@@ -212,10 +279,10 @@ export class Game {
         );
       } else if (data.type === "pencil") {
         this.ctx.beginPath();
-        // @ts-ignore
+
         this.ctx.moveTo(data.pencilValue[0].x, data.pencilValue[0].y);
-        // @ts-ignore
-        data.pencilValue.map((p) => {
+
+        data.pencilValue.map((p: any) => {
           this.ctx.lineTo(p.x, p.y);
         });
         this.ctx.stroke();
@@ -227,17 +294,14 @@ export class Game {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.ctx.strokeStyle = "white";
 
-    this.allShapes.forEach((shape) => {
+    this.allShapes.forEach((shape: any) => {
       const data = shape.diagram;
 
       if (data.type === "rectangle") {
-        // @ts-ignore
         this.printRectangle(data.x, data.y, data.width, data.height);
       } else if (data.type === "circle") {
-        // @ts-ignore
         this.printCircle(data.centerX, data.centerY, data.radius);
       } else if (data.type === "arrow") {
-        // @ts-ignore
         this.printArrow(
           data.fromX,
           data.fromY,
@@ -263,17 +327,14 @@ export class Game {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.ctx.strokeStyle = "white";
 
-    this.allShapes.forEach((shape) => {
+    this.allShapes.forEach((shape: any) => {
       const data = shape.diagram;
 
       if (data.type === "rectangle") {
-        // @ts-ignore
         this.printRectangle(data.x, data.y, data.width, data.height);
       } else if (data.type === "circle") {
-        // @ts-ignore
         this.printCircle(data.centerX, data.centerY, data.radius);
       } else if (data.type === "arrow") {
-        // @ts-ignore
         this.printArrow(
           data.fromX,
           data.fromY,
@@ -442,5 +503,32 @@ export class Game {
     });
 
     this.ctx.stroke();
+  }
+
+  isPointNearArrow(arrow: any, exactThreshold = 2, nearThreshold = 8) {
+    const { fromX, fromY, toX, toY } = arrow;
+
+    const dx = toX - fromX;
+    const dy = toY - fromY;
+    const lengthSquared = dx * dx + dy * dy;
+
+    let t =
+      ((this.clickX - fromX) * dx + (this.clickY - fromY) * dy) / lengthSquared;
+
+    t = Math.max(0, Math.min(1, t));
+
+    const closestX = fromX + t * dx;
+    const closestY = fromY + t * dy;
+
+    const distance = Math.sqrt(
+      (this.clickX - closestX) ** 2 + (this.clickY - closestY) ** 2
+    );
+
+    if (distance <= exactThreshold) {
+      return "exact";
+    } else if (distance <= nearThreshold) {
+      return "near";
+    }
+    return null;
   }
 }

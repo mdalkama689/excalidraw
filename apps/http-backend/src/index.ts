@@ -162,6 +162,7 @@ app.post(
   }
 );
 
+
 app.get(
   "/chats/:roomId",
   authMiddleware,
@@ -198,7 +199,7 @@ app.get(
     }
   }
 );
-
+// @ts-ignore
 app.post("/check-room", authMiddleware, async (req: Request, res: Response) => {
   try {
     const roomId = req.body.roomId;
