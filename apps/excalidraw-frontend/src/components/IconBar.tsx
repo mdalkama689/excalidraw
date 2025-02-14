@@ -1,4 +1,4 @@
-import { ArrowRight, Circle, Eraser, Pencil, RectangleHorizontal } from "lucide-react";
+import { ArrowRight, Baseline, Circle, Eraser, Pencil, RectangleHorizontal, Text } from "lucide-react";
 
 interface IconBarProps {
   onClick: (tool: string) => void;
@@ -46,6 +46,16 @@ export const IconBar = ({ onClick, selectedTool }: IconBarProps) => {
           <Eraser
             onClick={() => onClick("eraser")}
             size={`${selectedTool === "eraser" ? "28" : "22"}`}
+          />
+
+      </div>
+
+      <div
+          className={`cursor-pointer  ${selectedTool === "text" ? "bg-gray-900 rounded-full" : "hover:scale-110"}`}
+        >
+          <Baseline
+            onClick={() => onClick("text")}
+            size={`${selectedTool === "text" ? "28" : "22"}`}
           />
 
       </div>

@@ -39,6 +39,8 @@ interface ShapeProps {
   diagram: rectangle | circle | arrow | pencil;
 }
 
+
+
 export class Game {
   private allShapes: ShapeProps[] = [];
   private canvas: any;
@@ -63,7 +65,7 @@ export class Game {
     this.initHandler();
   }
 
-  setTool(tool: string) {
+  setTool(tool: 'rectangle' | 'circle' | 'arrow' | 'pencil' | 'text' | 'eraser') {
     this.selectedTool = tool;
   }
   async initDraw() {
@@ -77,6 +79,7 @@ export class Game {
     this.canvas.addEventListener("mouseup", this.handleMouseUp);
     this.canvas.addEventListener("mousemove", this.handleMouseMove);
     this.socket.addEventListener("message", this.handleRecievingData);
+
   }
 
   destroyHandler() {
@@ -156,12 +159,29 @@ export class Game {
               (x) => x.diagram.id != data.id
             );
           }
+        } else if (data.type === "pencil") {
+          console.log(data);
+
+          const clickResult = this.isPencilStrokeClicked(data.pencilValue);
+          if (clickResult) {
+            const message = {
+              type: "erase",
+              id: data.id,
+              roomId: this.roomId,
+            };
+            this.socket.send(JSON.stringify(message));
+            this.allShapes = this.allShapes.filter(
+              (x) => x.diagram.id != data.id
+            );
+          }
         }
       });
       this.redrawExistingDiagrams();
     }
   };
 
+
+  
   handleMouseUp = (e: MouseEvent) => {
     this.startDraw = false;
 
@@ -259,6 +279,14 @@ export class Game {
   handleRecievingData = (message: MessageEvent) => {
     const data = JSON.parse(message.data);
     console.log(data);
+    console.log(typeof data);
+    // this is for erase
+    if (typeof data === "string") {
+      this.allShapes = this.allShapes.filter((x) => x.diagram.id != data);
+      this.redrawExistingDiagrams();
+      return;
+    }
+
     this.allShapes.push({ diagram: data });
 
     this.allShapes.forEach((shape: any) => {
@@ -530,5 +558,40 @@ export class Game {
       return "near";
     }
     return null;
+  }
+
+  isPencilStrokeClicked(
+    pencilStroke: any,
+    exactThreshold = 2,
+    nearThreshold = 8
+  ) {
+    for (let i = 0; i < pencilStroke.length - 1; i++) {
+      const fromX = pencilStroke[i].x;
+      const fromY = pencilStroke[i].y;
+      const toX = pencilStroke[i + 1].x;
+      const toY = pencilStroke[i + 1].y;
+
+      const dx = toX - fromX;
+      const dy = toY - fromY;
+      const lengthSquared = dx * dx + dy * dy;
+
+      let t =
+        ((this.clickX - fromX) * dx + (this.clickY - fromY) * dy) /
+        lengthSquared;
+      t = Math.max(0, Math.min(1, t)); // Clamp 't' between 0 and 1
+
+      const closestX = fromX + t * dx;
+      const closestY = fromY + t * dy;
+
+      const distance = Math.sqrt(
+        (this.clickX - closestX) ** 2 + (this.clickY - closestY) ** 2
+      );
+
+      if (distance <= exactThreshold || distance <= nearThreshold) {
+        return true; // Clicked on the stroke
+      }
+    }
+
+    return false;
   }
 }
