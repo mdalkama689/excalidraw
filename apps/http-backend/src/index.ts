@@ -1,4 +1,11 @@
-import { JWT_SECRET, AuthReq } from "@repo/backend-common/config";
+import {
+  JWT_SECRET,
+  AuthReq,
+  JWT_EXPIRES_IN,
+  COOKIE_MAX_AGE,
+  NODE_ENV,
+  CLIENT_URL,
+} from "@repo/backend-common/config";
 import express, { Request, Response } from "express";
 import {
   signInSchema,
@@ -10,12 +17,16 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { authMiddleware } from "./middleware";
 import cors from "cors";
+import cookieParser from "cookie-parser";
+
 const app = express();
 
 app.use(express.json());
+app.use(cookieParser());
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: CLIENT_URL,
+    credentials: true,
   })
 );
 app.post("/signup", async (req: Request, res: Response) => {
@@ -106,13 +117,14 @@ app.post("/signin", async (req: Request, res: Response) => {
     }
 
     const userId = user.id;
-    const token = await jwt.sign({ userId }, JWT_SECRET, { expiresIn: "7d" });
+    const token = await jwt.sign({ userId }, JWT_SECRET, {
+      expiresIn: JWT_EXPIRES_IN,
+    });
 
     res.status(200).json({
       success: true,
       message: "Sigin successsfully!",
       token,
-      user,
     });
     return;
   } catch (error) {
@@ -161,7 +173,6 @@ app.post(
     }
   }
 );
-
 
 app.get(
   "/chats/:roomId",

@@ -39,8 +39,6 @@ interface ShapeProps {
   diagram: rectangle | circle | arrow | pencil;
 }
 
-
-
 export class Game {
   private allShapes: ShapeProps[] = [];
   private canvas: any;
@@ -65,7 +63,9 @@ export class Game {
     this.initHandler();
   }
 
-  setTool(tool: 'rectangle' | 'circle' | 'arrow' | 'pencil' | 'text' | 'eraser') {
+  setTool(
+    tool: "rectangle" | "circle" | "arrow" | "pencil" | "text" | "eraser"
+  ) {
     this.selectedTool = tool;
   }
   async initDraw() {
@@ -79,22 +79,20 @@ export class Game {
     this.canvas.addEventListener("mouseup", this.handleMouseUp);
     this.canvas.addEventListener("mousemove", this.handleMouseMove);
     this.socket.addEventListener("message", this.handleRecievingData);
-
   }
 
   destroyHandler() {
     this.canvas.removeEventListener("mousedown", this.handleMouseDown);
     this.canvas.removeEventListener("mouseup", this.handleMouseUp);
-    this.canvas.removeEventListener("mousemove", this.handleMouseMove);
+    this.canvas.removeEventListener("mousemove", this.handleMouseMove); 
     this.socket.removeEventListener("message", this.handleRecievingData);
   }
 
+  
   handleMouseDown = (e: MouseEvent) => {
     this.startDraw = true;
     this.startX = e.offsetX;
     this.startY = e.offsetY;
-
-    console.log("this. selecetedtool in mouse up  : ", this.selectedTool);
 
     if (this.selectedTool === "eraser") {
       this.clickX = e.offsetX;
@@ -178,14 +176,13 @@ export class Game {
       });
       this.redrawExistingDiagrams();
     }
+
   };
 
-
-  
   handleMouseUp = (e: MouseEvent) => {
     this.startDraw = false;
 
-    console.log("this. selecetedtool in mouse up  : ", this.selectedTool);
+
     const width = e.offsetX - this.startX;
     const height = e.offsetY - this.startY;
 

@@ -2,13 +2,15 @@
 import { Button } from "@repo/ui/button";
 import { Input } from "@repo/ui/input";
 import Link from "next/link";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import axios from "axios";
 import { HTTP_BACKEND } from "../../config";
 import { useRouter } from "next/navigation";
+import { AuthContext } from "@/context/AuthContext";
 
 export function AuthPage({ type }) {
   const router = useRouter();
+  const { setIsAuthenticated } = useContext(AuthContext);
 
   const [isLoading, setIsLaoding] = useState(false);
 
@@ -29,6 +31,7 @@ export function AuthPage({ type }) {
       }
       if (type === "signin") {
         localStorage.setItem("token", response.data.token);
+        setIsAuthenticated(true);
       }
     } catch (error) {
       console.log(error?.response?.data?.message);
