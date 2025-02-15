@@ -5,8 +5,15 @@ import { AuthContext } from "@/context/AuthContext";
 import { useContext } from "react";
 
 export default function Home() {
-  const {isAuthenticated}  = useContext(AuthContext)
+  const {isAuthenticated, loading }  = useContext(AuthContext)
 
+  if(loading){
+    return (
+      <div>
+        loading .......... 
+      </div>
+    )
+  }
 
   return (
     <>

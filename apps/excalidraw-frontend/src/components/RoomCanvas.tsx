@@ -1,51 +1,45 @@
-'use client'
+"use client";
 
-import { useEffect, useState } from "react";
-import Canvas from "./Canvas"; 
+import { useContext, useEffect, useState } from "react";
+import Canvas from "./Canvas";
+import { AuthContext } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
+export default function RoomCanVas({ roomId }: { roomId: string }) {
+  const router = useRouter();
 
-export default function RoomCanVas({roomId}: {roomId: string}) {
+  const [socket, setSocket] = useState<WebSocket | null>(null);
+  const { isAuthenticated, loading } = useContext(AuthContext);
 
-const [socket, setSocket] = useState<WebSocket | null> (null)
+  useEffect(() => {
+    const token = localStorage.getItem("token");
 
-useEffect(() => {
+    const ws = new WebSocket(`ws://localhost:8080/?token=${token}`);
 
-  const token = localStorage.getItem("token");
-  if (!token) {
-   alert("Token not found!");
-    return;
-  }
-
-
-  const ws = new WebSocket(`ws://localhost:8080/?token=${token}`);
-
-  ws.onopen = () => {
-    const joinMessage = {
-      type: "join_room",
-      roomId,
+    ws.onopen = () => {
+      const joinMessage = {
+        type: "join_room",
+        roomId,
+      };
+      setSocket(ws);
+      ws.send(JSON.stringify(joinMessage));
     };
-    setSocket(ws);
-    ws.send(JSON.stringify(joinMessage));
-  };
 
-  return () => {
-    socket?.close();
-  };
+    return () => {
+      socket?.close();
+    };
+  }, []);
 
-},[])
-
-
-
-  if(!socket){
-    return (
-      <div>connecting to server........ </div>
-    )
+  if (loading) {
+    return <p>loading........ </p>;
+  }
+  if (!isAuthenticated) {
+    router.push("/signin");
   }
 
-  
-  return (
-  <Canvas 
-  roomId={roomId}
-  socket={socket}
-  />
-  );
+  if (!socket) {
+    return <div>connecting to server........ </div>;
+  }
+ 
+
+  return <Canvas roomId={roomId} socket={socket} />;
 }
