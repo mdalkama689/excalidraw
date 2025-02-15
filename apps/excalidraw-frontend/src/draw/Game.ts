@@ -53,6 +53,8 @@ export class Game {
   private pencilArray = [];
   private clickX: number = 0;
   private clickY: number = 0;
+  private message;
+  private diagramId;
 
   constructor(canvas: any, socket: WebSocket, roomId: string) {
     this.canvas = canvas;
@@ -84,11 +86,10 @@ export class Game {
   destroyHandler() {
     this.canvas.removeEventListener("mousedown", this.handleMouseDown);
     this.canvas.removeEventListener("mouseup", this.handleMouseUp);
-    this.canvas.removeEventListener("mousemove", this.handleMouseMove); 
+    this.canvas.removeEventListener("mousemove", this.handleMouseMove);
     this.socket.removeEventListener("message", this.handleRecievingData);
   }
 
-  
   handleMouseDown = (e: MouseEvent) => {
     this.startDraw = true;
     this.startX = e.offsetX;
@@ -101,119 +102,80 @@ export class Game {
       this.allShapes.map((shape: any) => {
         const data = shape.diagram;
         if (data.type === "rectangle") {
-          const minX = data.x;
-          const maxX = data.x + data.width;
-          const minY = data.y;
-          const maxY = data.y + data.height;
-
-          const condition1 = minX <= this.clickX && this.clickX <= maxX;
-          const condition2 = minY <= this.clickY && this.clickY <= maxY;
-
-          if (condition1 && condition2) {
-            const message = {
-              type: "erase",
-              id: data.id,
-              roomId: this.roomId,
-            };
-
-            this.socket.send(JSON.stringify(message));
-
-            this.allShapes = this.allShapes.filter(
-              (x) => x.diagram.id != data.id
-            );
-          }
+          this.diagramId = this.rectEraseId(data);
         } else if (data.type === "circle") {
-          let x = this.clickX - data.centerX;
-          let y = this.clickY - data.centerY;
-          x = x * x;
-          y = y * y;
-
-          const ans = Math.sqrt(x + y);
-
-          if (ans <= data.radius) {
-            const message = {
-              type: "erase",
-              id: data.id,
-              roomId: this.roomId,
-            };
-
-            this.socket.send(JSON.stringify(message));
-
-            this.allShapes = this.allShapes.filter(
-              (x) => x.diagram.id != data.id
-            );
-          }
+          this.diagramId = this.circeEraseId(data);
         } else if (data.type === "arrow") {
-          const clickResult = this.isPointNearArrow(data);
-
-          if (clickResult === "exact" || clickResult === "near") {
-            const message = {
-              type: "erase",
-              id: data.id,
-              roomId: this.roomId,
-            };
-            this.socket.send(JSON.stringify(message));
-            this.allShapes = this.allShapes.filter(
-              (x) => x.diagram.id != data.id
-            );
-          }
+          this.diagramId = this.arrowEraseId(data);
         } else if (data.type === "pencil") {
-          console.log(data);
+          this.diagramId = this.pencilEraseId(data);
+        }
 
-          const clickResult = this.isPencilStrokeClicked(data.pencilValue);
-          if (clickResult) {
-            const message = {
-              type: "erase",
-              id: data.id,
-              roomId: this.roomId,
-            };
-            this.socket.send(JSON.stringify(message));
-            this.allShapes = this.allShapes.filter(
-              (x) => x.diagram.id != data.id
-            );
-          }
+        if (this.diagramId) {
+          const message = {
+            type: "erase",
+            id: data.id,
+            roomId: this.roomId,
+          };
+          this.socket.send(JSON.stringify(message));
+          this.allShapes = this.allShapes.filter(
+            (x) => x.diagram.id != data.id
+          );
+          this.redrawExistingDiagrams();
         }
       });
-      this.redrawExistingDiagrams();
     }
-
   };
+
+  rectEraseId(data: any) {
+    const minX = data.x;
+    const maxX = data.x + data.width;
+    const minY = data.y;
+    const maxY = data.y + data.height;
+
+    const condition1 = minX <= this.clickX && this.clickX <= maxX;
+    const condition2 = minY <= this.clickY && this.clickY <= maxY;
+
+    console.log(" condition1 && condition2 : ", condition1 && condition2);
+    if (condition1 && condition2) {
+      return data.id;
+    }
+    return null;
+  }
+
+  circeEraseId(data: any) {
+    let x = this.clickX - data.centerX;
+    let y = this.clickY - data.centerY;
+    x = x * x;
+    y = y * y;
+
+    const ans = Math.sqrt(x + y);
+
+    if (ans <= data.radius) {
+      return data.id;
+    }
+    return null;
+  }
 
   handleMouseUp = (e: MouseEvent) => {
     this.startDraw = false;
-
 
     const width = e.offsetX - this.startX;
     const height = e.offsetY - this.startY;
 
     if (this.selectedTool === "rectangle") {
       this.createRectanlge(width, height);
-      console.log(
-        "this. selecetedtool insied if reacta mouse up  : ",
-        this.selectedTool
-      );
     } else if (this.selectedTool === "circle") {
       this.createCirlce(width, height);
-      console.log(
-        "this. selecetedtool insied ifcircle mouse up  : ",
-        this.selectedTool
-      );
     } else if (this.selectedTool === "arrow") {
       this.createArrow(e.offsetX, e.offsetY);
-      console.log(
-        "this. selecetedtool insied ifarrow mouse up  : ",
-        this.selectedTool
-      );
     } else if (this.selectedTool === "pencil") {
       this.createPencil();
-      console.log(
-        "this. selecetedtool insied if pencil mouse up  : ",
-        this.selectedTool
-      );
     }
 
     const radius = Math.sqrt(width ** 2 + height ** 2) / 2;
-    // this is code repetation some after some time
+    
+    // this is code repetation solve after some time
 
     const fromX = this.startX;
     const fromY = this.startY;
@@ -434,7 +396,7 @@ export class Game {
       angle,
     };
 
-    return this.diagram;
+    return this.diagramId;
   }
 
   createPencil() {
@@ -530,8 +492,8 @@ export class Game {
     this.ctx.stroke();
   }
 
-  isPointNearArrow(arrow: any, exactThreshold = 2, nearThreshold = 8) {
-    const { fromX, fromY, toX, toY } = arrow;
+  arrowEraseId(data: any, exactThreshold = 2, nearThreshold = 8) {
+    const { fromX, fromY, toX, toY } = data;
 
     const dx = toX - fromX;
     const dy = toY - fromY;
@@ -550,18 +512,16 @@ export class Game {
     );
 
     if (distance <= exactThreshold) {
-      return "exact";
+      return data.id;
     } else if (distance <= nearThreshold) {
-      return "near";
+      return data.id;
     }
     return null;
   }
 
-  isPencilStrokeClicked(
-    pencilStroke: any,
-    exactThreshold = 2,
-    nearThreshold = 8
-  ) {
+  pencilEraseId(data: any, exactThreshold = 2, nearThreshold = 8) {
+    const pencilStroke = data.pencilValue;
+
     for (let i = 0; i < pencilStroke.length - 1; i++) {
       const fromX = pencilStroke[i].x;
       const fromY = pencilStroke[i].y;
@@ -585,7 +545,7 @@ export class Game {
       );
 
       if (distance <= exactThreshold || distance <= nearThreshold) {
-        return true; // Clicked on the stroke
+        return data.id;
       }
     }
 

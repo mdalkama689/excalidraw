@@ -1,10 +1,8 @@
 import {
   JWT_SECRET,
-  AuthReq,
   JWT_EXPIRES_IN,
-  COOKIE_MAX_AGE,
-  NODE_ENV,
   CLIENT_URL,
+  PORT,
 } from "@repo/backend-common/config";
 import express, { Request, Response } from "express";
 import {
@@ -15,7 +13,7 @@ import {
 import { client } from "@repo/db/client";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { authMiddleware } from "./middleware";
+import { authMiddleware, AuthReq } from "./middleware";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 
@@ -29,10 +27,11 @@ app.use(
     credentials: true,
   })
 );
+
 app.post("/signup", async (req: Request, res: Response) => {
   try {
     const parsedData = signUpSchema.safeParse(req.body);
-    console.log(parsedData.data);
+
     if (!parsedData.success) {
       res.status(400).json({
         success: false,
@@ -117,8 +116,9 @@ app.post("/signin", async (req: Request, res: Response) => {
     }
 
     const userId = user.id;
+
     const token = await jwt.sign({ userId }, JWT_SECRET, {
-      expiresIn: JWT_EXPIRES_IN,
+      expiresIn: Number(JWT_EXPIRES_IN),
     });
 
     res.status(200).json({
@@ -151,11 +151,12 @@ app.post(
         });
         return;
       }
+      if (!req.user) return;
       const userId = req.user.userId;
       const room = await client.room.create({
         data: {
           roomName: parsedData.data?.roomName,
-          userId: userId,
+          userId: Number(userId),
         },
       });
       res.status(200).json({
@@ -180,7 +181,6 @@ app.get(
   async (req: Request, res: Response) => {
     try {
       const roomId = req.params.roomId;
-      console.log("roomid : ", roomId);
       if (!roomId) {
         res.status(400).json({
           success: false,
@@ -196,7 +196,6 @@ app.get(
           diagram: true,
         },
       });
-      console.log(allChats);
       res.status(200).json({
         success: true,
         allChats,
@@ -210,12 +209,11 @@ app.get(
     }
   }
 );
-// @ts-ignore
+
 app.post("/check-room", authMiddleware, async (req: Request, res: Response) => {
   try {
     const roomId = req.body.roomId;
 
-    console.log(req.body);
     if (!roomId) {
       res.status(400).json({
         success: false,
@@ -253,6 +251,6 @@ app.post("/check-room", authMiddleware, async (req: Request, res: Response) => {
   }
 });
 
-app.listen(8000, () => {
+app.listen(PORT, () => {
   console.log("running");
 });

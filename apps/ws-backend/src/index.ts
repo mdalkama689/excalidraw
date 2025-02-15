@@ -1,25 +1,31 @@
-import { WebSocketServer } from "ws";
+import WebSocket,  { WebSocketServer } from "ws";
 import jwt, { decode, Jwt, JwtPayload } from "jsonwebtoken";
 import { JWT_SECRET } from "@repo/backend-common/config";
 import { client } from "@repo/db/client";
 const wss = new WebSocketServer({ port: 8080 });
 
-let user: any = [];
+interface UserProps {
+  socket: WebSocket ,
+        roomId: string,
+        userId: string,
+}
 
-async function verifyToken(token: any) {
+let user: UserProps[]  = [];
+
+async function verifyToken(token) {
   try {
     const decodeToken = await jwt.verify(token, JWT_SECRET);
     if (!decodeToken) {
       return null;
     }
-    // @ts-ignore
+
     return decodeToken.userId;
   } catch (error) {
     return null;
   }
 }
 
-wss.on("connection", async (ws, req) => {
+wss.on("connection", async (ws: WebSocket, req) => {
   console.log("new user connected");
 
   const url = req.url;
@@ -59,7 +65,7 @@ wss.on("connection", async (ws, req) => {
         },
       });
 
-      user.forEach((eachUser: any) => {
+      user.forEach((eachUser) => {
         if (eachUser.roomId == parsedData.roomId && eachUser.socket != ws) {
           eachUser.socket.send(JSON.stringify(parsedData.message));
         }
@@ -68,7 +74,7 @@ wss.on("connection", async (ws, req) => {
     }
 
     if (parsedData.type === "leave_room") {
-      user = user.filter((eachUser: any) => eachUser.socket !== ws);
+      user = user.filter((eachUser) => eachUser.socket !== ws);
     }
 
     if (parsedData.type === "erase") {
@@ -79,7 +85,7 @@ wss.on("connection", async (ws, req) => {
         },
       });
     
-      user.forEach((eachUser: any) => {
+      user.forEach((eachUser) => {
         if (eachUser.roomId == parsedData.roomId && eachUser.socket != ws) {
           eachUser.socket.send(JSON.stringify(parsedData.id));
         }
