@@ -8,7 +8,9 @@ export default function RoomCanVas({ roomId }: { roomId: string }) {
   const router = useRouter();
 
   const [socket, setSocket] = useState<WebSocket | null>(null);
-  const { isAuthenticated, loading } = useContext(AuthContext);
+  const auth = useContext(AuthContext);
+  if (!auth) return;
+  const { isAuthenticated, loading } = auth;
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -39,7 +41,6 @@ export default function RoomCanVas({ roomId }: { roomId: string }) {
   if (!socket) {
     return <div>connecting to server........ </div>;
   }
- 
 
   return <Canvas roomId={roomId} socket={socket} />;
 }

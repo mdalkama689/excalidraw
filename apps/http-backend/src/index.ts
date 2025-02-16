@@ -118,7 +118,7 @@ app.post("/signin", async (req: Request, res: Response) => {
     const userId = user.id;
 
     const token = await jwt.sign({ userId }, JWT_SECRET, {
-      expiresIn: Number(JWT_EXPIRES_IN),
+      expiresIn: JWT_EXPIRES_IN,
     });
 
     res.status(200).json({
@@ -248,6 +248,61 @@ app.post("/check-room", authMiddleware, async (req: Request, res: Response) => {
       message: error instanceof Error ? error.message : "Something went wrong",
     });
     return;
+  }
+});
+
+app.get("/my-docs", authMiddleware,  async (req: AuthReq, res: Response) => {
+  try {
+    if (!req.user) return;
+
+    const userId = req.user.userId;
+    console.log(userId);
+
+    const allDocs = await client.room.findMany({
+      where: {
+        userId: Number(userId)
+      },
+      select: {
+        chats: true
+      },
+      
+    })
+
+    console.log(allDocs);
+    res.status(200).json({
+      success: true,
+      messsage: "successfull got your all docs",
+      allDocs
+    });
+    return;
+  } catch (error) {
+    console.error(error);
+    res.status(400).json({
+      success: false,
+      message: error instanceof Error ? error.message : "Something went wrong",
+    });
+  }
+});
+
+app.get("/me", authMiddleware, async (req: AuthReq, res: Response) => {
+  try {
+    if (!req.user) return;
+
+    const userId = req.user.userId;
+    console.log(userId);
+
+   
+    res.status(200).json({
+      success: true,
+      messsage: "successfull got your all docs",
+    });
+    return;
+  } catch (error) {
+    console.error(error);
+    res.status(400).json({
+      success: false,
+      message: error instanceof Error ? error.message : "Something went wrong",
+    });
   }
 });
 

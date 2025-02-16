@@ -3,9 +3,11 @@
 import { Button } from "@repo/ui/button";
 import { Input } from "@repo/ui/input";
 import axios from "axios";
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { HTTP_BACKEND } from "../../config";
 import { useRouter } from "next/navigation";
+import { AuthContext } from "@/context/AuthContext";
+import Link from "next/link";
 
 export default function HomePage() {
   const router = useRouter();
@@ -14,6 +16,10 @@ export default function HomePage() {
   const [roomId, setRoomId] = useState("");
   const [roomName, setRoomName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const auth = useContext(AuthContext);
+  if (!auth) return;
+
+  const { setIsAuthenticated } = auth;
 
   const handleCreateRoom = async (e: React.FormEvent<HTMLFormElement>) => {
     try {
@@ -34,7 +40,7 @@ export default function HomePage() {
         const roomId = response.data.room.id;
         router.push(`/room/${roomId}`);
       }
-    } catch (error) {
+    } catch (error: any) {
       const message = error?.response?.data?.message || "Something went wrong";
       alert(message);
     } finally {
@@ -43,7 +49,6 @@ export default function HomePage() {
   };
 
   const handleJoinRoom = async (e: React.FormEvent<HTMLFormElement>) => {
-
     try {
       e.preventDefault();
       setIsLoading(true);
@@ -62,7 +67,7 @@ export default function HomePage() {
         const roomId = response.data.room.id;
         router.push(`/room/${roomId}`);
       }
-    } catch (error) {
+    } catch (error: any) {
       const message = error?.response?.data?.message || "Something went wrong";
       alert(message);
     } finally {
@@ -70,14 +75,30 @@ export default function HomePage() {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    setIsAuthenticated(false);
+  };
+
   const roomValue = toggle ? "room-id" : "room-name";
 
   return (
     <div>
-      <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
-        Your Dashboard
-      </h1>
-
+      <div className="flex items-center justify-between mt-1 ml-1">
+     <Link href='/my-docs'>
+     <Button
+          type="button"
+          className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
+          text="Your All Docs"
+        />
+     </Link>
+        <Button
+          onClick={handleLogout}
+          type="button"
+          className="py-2.5 px-5 me-2 mb-2 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
+          text="Logout"
+        />
+      </div>
       <div className="h-screen w-full flex items-center justify-center flex-col">
         <div className=" w-[400px] bg-white rounded-lg shadow border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
           <div className="p-6 space-y-4 md:space-y-6 sm:p-8">

@@ -3,7 +3,7 @@ import { v4 as uuid } from "uuid";
 
 interface rectangle {
   id: string;
-  type: string;
+  type: "rectangle";
   x: number;
   y: number;
   height: number;
@@ -12,7 +12,7 @@ interface rectangle {
 
 interface circle {
   id: string;
-  type: string;
+  type: "circle";
   centerX: number;
   centerY: number;
   radius: number;
@@ -20,9 +20,9 @@ interface circle {
 
 interface arrow {
   id: string;
-  type: string;
-  x: number;
-  y: number;
+  type: "arrow";
+  fromX: number;
+  fromY: number;
   toX: number;
   toY: number;
   angle: number;
@@ -34,14 +34,21 @@ interface pencil {
   type: "pencil";
   pencilValue: [{ x: number; y: number }];
 }
-
+type shape = rectangle | circle | arrow | pencil;
 interface ShapeProps {
-  diagram: rectangle | circle | arrow | pencil;
+  diagram: shape;
+}
+interface PencilArrayProps {
+  x: number;
+  y: number;
+}
+interface ToolProps {
+  tool: "rectangle" | "circle" | "arrow" | "pencil" | "text" | "eraser";
 }
 
 export class Game {
   private allShapes: ShapeProps[] = [];
-  private canvas: any;
+  private canvas: HTMLCanvasElement;
   private socket: WebSocket;
   private roomId: string;
   private startDraw: boolean = false;
@@ -49,14 +56,13 @@ export class Game {
   private startY: number = 0;
   private ctx: CanvasRenderingContext2D;
   private selectedTool: string = "circle";
-  private diagram: any;
-  private pencilArray = [];
+  private diagram;
+  private pencilArray: PencilArrayProps[] = [];
   private clickX: number = 0;
   private clickY: number = 0;
-  private message;
-  private diagramId;
+  private diagramId: string | null = null;
 
-  constructor(canvas: any, socket: WebSocket, roomId: string) {
+  constructor(canvas: HTMLCanvasElement, socket: WebSocket, roomId: string) {
     this.canvas = canvas;
     this.socket = socket;
     this.roomId = roomId;
@@ -65,9 +71,7 @@ export class Game {
     this.initHandler();
   }
 
-  setTool(
-    tool: "rectangle" | "circle" | "arrow" | "pencil" | "text" | "eraser"
-  ) {
+  setTool(tool: ToolProps) {
     this.selectedTool = tool;
   }
   async initDraw() {
@@ -127,36 +131,6 @@ export class Game {
     }
   };
 
-  rectEraseId(data: any) {
-    const minX = data.x;
-    const maxX = data.x + data.width;
-    const minY = data.y;
-    const maxY = data.y + data.height;
-
-    const condition1 = minX <= this.clickX && this.clickX <= maxX;
-    const condition2 = minY <= this.clickY && this.clickY <= maxY;
-
-    console.log(" condition1 && condition2 : ", condition1 && condition2);
-    if (condition1 && condition2) {
-      return data.id;
-    }
-    return null;
-  }
-
-  circeEraseId(data: any) {
-    let x = this.clickX - data.centerX;
-    let y = this.clickY - data.centerY;
-    x = x * x;
-    y = y * y;
-
-    const ans = Math.sqrt(x + y);
-
-    if (ans <= data.radius) {
-      return data.id;
-    }
-    return null;
-  }
-
   handleMouseUp = (e: MouseEvent) => {
     this.startDraw = false;
 
@@ -174,8 +148,6 @@ export class Game {
     }
 
     const radius = Math.sqrt(width ** 2 + height ** 2) / 2;
-    
-    // this is code repetation solve after some time
 
     const fromX = this.startX;
     const fromY = this.startY;
@@ -204,7 +176,7 @@ export class Game {
       message: this.diagram,
       roomId: this.roomId,
     };
-    console.log(this.diagram);
+
     this.socket.send(JSON.stringify(message));
   };
 
@@ -227,11 +199,8 @@ export class Game {
     } else if (this.selectedTool === "arrow") {
       this.printArrowForMove(e.offsetX, e.offsetY);
     } else if (this.selectedTool === "pencil") {
-      // @ts-ignore
       this.pencilArray.push({ x: e.offsetX, y: e.offsetY });
       this.drawPencil();
-    } else if (this.selectedTool === "eraser") {
-      // console.log('eraser')
     }
   };
 
@@ -248,7 +217,7 @@ export class Game {
 
     this.allShapes.push({ diagram: data });
 
-    this.allShapes.forEach((shape: any) => {
+    this.allShapes.map((shape: ShapeProps) => {
       const data = shape.diagram;
 
       if (data.type === "rectangle") {
@@ -269,7 +238,7 @@ export class Game {
 
         this.ctx.moveTo(data.pencilValue[0].x, data.pencilValue[0].y);
 
-        data.pencilValue.map((p: any) => {
+        data.pencilValue.map((p: PencilArrayProps) => {
           this.ctx.lineTo(p.x, p.y);
         });
         this.ctx.stroke();
@@ -281,7 +250,7 @@ export class Game {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.ctx.strokeStyle = "white";
 
-    this.allShapes.forEach((shape: any) => {
+    this.allShapes.forEach((shape: ShapeProps) => {
       const data = shape.diagram;
 
       if (data.type === "rectangle") {
@@ -299,9 +268,9 @@ export class Game {
         );
       } else if (data.type === "pencil") {
         this.ctx.beginPath();
-        // @ts-ignore
+
         this.ctx.moveTo(data.pencilValue[0].x, data.pencilValue[0].y);
-        // @ts-ignore
+
         data.pencilValue.map((p) => {
           this.ctx.lineTo(p.x, p.y);
         });
@@ -314,7 +283,7 @@ export class Game {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.ctx.strokeStyle = "white";
 
-    this.allShapes.forEach((shape: any) => {
+    this.allShapes.forEach((shape: ShapeProps) => {
       const data = shape.diagram;
 
       if (data.type === "rectangle") {
@@ -332,9 +301,9 @@ export class Game {
         );
       } else if (data.type === "pencil") {
         this.ctx.beginPath();
-        // @ts-ignore
+
         this.ctx.moveTo(data.pencilValue[0].x, data.pencilValue[0].y);
-        // @ts-ignore
+
         data.pencilValue.map((p) => {
           this.ctx.lineTo(p.x, p.y);
         });
@@ -481,18 +450,17 @@ export class Game {
 
   drawPencil() {
     this.ctx.beginPath();
-    // @ts-ignore
+
     this.ctx.moveTo(this.pencilArray[0].x, this.pencilArray[0].y);
-    // @ts-ignore
+
     this.pencilArray.map((p) => {
-      // @ts-ignore
       this.ctx.lineTo(p.x, p.y);
     });
 
     this.ctx.stroke();
   }
 
-  arrowEraseId(data: any, exactThreshold = 2, nearThreshold = 8) {
+  arrowEraseId(data: arrow, exactThreshold = 2, nearThreshold = 8) {
     const { fromX, fromY, toX, toY } = data;
 
     const dx = toX - fromX;
@@ -519,7 +487,7 @@ export class Game {
     return null;
   }
 
-  pencilEraseId(data: any, exactThreshold = 2, nearThreshold = 8) {
+  pencilEraseId(data: pencil, exactThreshold = 2, nearThreshold = 8) {
     const pencilStroke = data.pencilValue;
 
     for (let i = 0; i < pencilStroke.length - 1; i++) {
@@ -549,6 +517,35 @@ export class Game {
       }
     }
 
-    return false;
+    return null;
+  }
+
+  rectEraseId(data: rectangle) {
+    const minX = data.x;
+    const maxX = data.x + data.width;
+    const minY = data.y;
+    const maxY = data.y + data.height;
+
+    const condition1 = minX <= this.clickX && this.clickX <= maxX;
+    const condition2 = minY <= this.clickY && this.clickY <= maxY;
+
+    if (condition1 && condition2) {
+      return data.id;
+    }
+    return null;
+  }
+
+  circeEraseId(data: circle) {
+    let x = this.clickX - data.centerX;
+    let y = this.clickY - data.centerY;
+    x = x * x;
+    y = y * y;
+
+    const ans = Math.sqrt(x + y);
+
+    if (ans <= data.radius) {
+      return data.id;
+    }
+    return null;
   }
 }

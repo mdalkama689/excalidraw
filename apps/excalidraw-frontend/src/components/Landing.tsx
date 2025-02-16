@@ -21,12 +21,19 @@ export default function LandingPage() {
               Create, collaborate, and share beautiful diagrams and sketches
               with our intuitive whiteboarding tool.
             </p>
-            <div className="mt-10 flex gap-4 justify-center">
-              <Link href="/start">
-                <Button text="Start Drawing" className="border border-white" />
-              </Link>
+            <div className="mt-10 flex flex-wrap gap-4 justify-center">
+            
               <Link href="/signup">
-                <Button text="Sign Up Free" />
+                <Button
+                  text="Sign Up Free"
+                  className="bg-blue-600 text-white px-6 py-2 rounded-lg transition-all duration-300 hover:bg-blue-700"
+                />
+              </Link>
+              <Link href="/signin">
+                <Button
+                  text="Sign In"
+                  className="border border-white text-white px-6 py-2 rounded-lg transition-all duration-300 hover:bg-white hover:text-black"
+                />
               </Link>
             </div>
           </div>
@@ -99,14 +106,6 @@ export default function LandingPage() {
             Join thousands of teams who trust our platform for their visual
             collaboration needs.
           </p>
-          <div className="flex gap-4 justify-center">
-            <Link href="/signup">
-              <Button text="Get Started Free" className="border border-white" />
-            </Link>
-            <Link href="/signin">
-              <Button text="Sign In " />
-            </Link>
-          </div>
         </div>
       </div>
     </div>
